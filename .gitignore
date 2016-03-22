@@ -1,0 +1,7 @@
+.idea
+*.pyc
+*.db
+venv
+node_modules
+migrations
+*.DS_Store
