@@ -13,8 +13,11 @@ mac_setup:
 run: worker scheduler
 
 worker:
-	venv/bin/celery -A tasks worker --loglevel=info
+	mkdir -p logs
+	venv/bin/celery -A tasks worker --loglevel=info --logfile=logs/worker.log
 
 scheduler:
-	venv/bin/celery -A tasks beat
+	mkdir -p logs
+	venv/bin/celery -A tasks beat --logfile=logs/scheduler.log
+
 
