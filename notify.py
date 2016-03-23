@@ -29,3 +29,13 @@ def currency_update_report(message):
         subject="XOPAY. Exchange rates update.",
         text=message
     )
+
+
+@app.task
+def send_mail(recipient, subject, message):
+    send_email(
+        email_from=DEFAULT_MAIL_SENDER,
+        email_to=recipient,
+        subject=subject,
+        text=message
+    )
