@@ -1,21 +1,23 @@
 import logging
 import signal
-import time
+from datetime import timedelta
+
 import tornado.web
 from tornado.ioloop import IOLoop
-from tornado.options import options, define
 from tornado.httpserver import HTTPServer
+from tornado.options import options, define
+
+from config import config
 
 __author__ = 'Kostel Serhii'
 
-logging.basicConfig(format='[NOTIFY][%(levelname)s]|%(asctime)s| %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
 
+LOG_FORMAT = '[NOTIFY][%(levelname)s]|%(asctime)s| %(message)s'
+logging.basicConfig(format=LOG_FORMAT, datefmt='%Y-%m-%d %H:%M:%S', level='DEBUG')
 
-MAX_WAIT_SECONDS_BEFORE_SHUTDOWN = 3
+log = logging.getLogger(__name__)
 
-define("debug", default=True, help="run in debug mode", type=bool)
-define("log_level", default='DEBUG', help="log level", type=str)
-define("port", default=7461, help="run on the given port", type=int)
+define("debug", default=False, help="run in debug mode", type=bool)
 
 
 class Application(tornado.web.Application):
@@ -29,42 +31,58 @@ class Application(tornado.web.Application):
         ]
 
         settings = dict(
-            debug=True,
+            debug=config['DEBUG'],
         )
 
         super(Application, self).__init__(handlers, **settings)
 
 
-def shutdown(server):
-    """ Stop server, wait for connection closed and stop IOLoop. """
+def shutdown(http_server):
+    """
+    Stop server and all process.
+    Wait for connection closed and stop IOLoop.
 
+    :param http_server: server instance to stop
+    """
     io_loop = IOLoop.current()
-    logging.info('Stopping XOPay Notify Service...')
-    server.stop()
+
+    log.info('Stopping XOPay Notify Service...')
+    http_server.stop()
 
     def finalize():
         io_loop.stop()
-        logging.info('Service stopped!')
+        log.info('Service stopped!')
 
-    if options.debug:
-        finalize()
+    wait_sec = config['WAIT_BEFORE_SHUTDOWN_SEC']
+    if wait_sec:
+        io_loop.add_timeout(timedelta(seconds=wait_sec), finalize)
     else:
-        io_loop.add_timeout(time.time() + MAX_WAIT_SECONDS_BEFORE_SHUTDOWN, finalize)
+        finalize()
 
 
 def main():
     """ Parse arguments, update settings, start server and start IOLoop. """
+
     options.parse_command_line()
 
+    if options.debug:
+        config.load_debug_config()
+    else:
+        config.load_production_config()
+
     # configure logger level
-    logging.getLogger().setLevel('DEBUG')
+    log.setLevel(config['LOG_LEVEL'])
+
+    log.info('Starting XOPay Notify Service')
+    if config['DEBUG']:
+        log.info('Debug mode is active!!')
 
     app = Application()
 
-    logging.info('Starting XOPay Notify Service on http://127.0.0.1:{port}/'.format(port=options.port))
+    log.info('Run HTTP Notify Server on http://127.0.0.1:{port}/'.format(port=config['PORT']))
 
     server = HTTPServer(app)
-    server.listen(options.port)
+    server.listen(config['PORT'])
 
     signal.signal(signal.SIGINT, lambda sig, frame: shutdown(server))
     signal.signal(signal.SIGTERM, lambda sig, frame: shutdown(server))
