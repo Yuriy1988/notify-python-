@@ -12,7 +12,10 @@ _default = dict(
 
     QUEUE_EMAIL='notify_email',
     QUEUE_SMS='notify_sms',
-    QUEUE_TRANSACTION='transactions_status'
+    QUEUE_TRANSACTION='transactions_status',
+
+    CLIENT_HOST='http://127.0.0.1:7254',
+    CLIENT_API_VERSION='dev',
 )
 
 _debug = dict(
