@@ -23,7 +23,7 @@ class QueueConsumer(object):
             await consumer.connect()
             await consumer.declare_and_bind('queue_name')
 
-            while True:
+            while not consumer.closing:
                 msg = await consumer.get_message('queue_name')
                 print('Test msg: %s' % msg)
 
@@ -63,6 +63,10 @@ class QueueConsumer(object):
 
         self._consumer_tags = dict()
         self._fifo_query_buffer = dict()
+
+    @property
+    def closing(self):
+        return self._closing
 
     @staticmethod
     def _parse_parameters(parameters):
@@ -371,7 +375,7 @@ if __name__ == '__main__':
         print('Declare')
         await consumer.declare_and_bind(QUEUE_NAME)
 
-        while True:
+        while not consumer.closing:
             print('Wait for message...')
             msg = await consumer.get_message(QUEUE_NAME)
             print('Test msg: %s' % msg)
