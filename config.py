@@ -3,13 +3,23 @@ __author__ = 'Kostel Serhii'
 
 _default = dict(
     PORT=7461,
+
+    QUEUE_HOST='127.0.01',
+    QUEUE_PORT=5672,
+    QUEUE_USERNAME='xopay_rabbit',
+    QUEUE_PASSWORD='5lf01xiOFwyMLvQrkzz7',
+    QUEUE_VIRTUAL_HOST='/xopay',
+
+    QUEUE_EMAIL='notify_email',
+    QUEUE_SMS='notify_sms',
+    QUEUE_TRANSACTION='transactions_status'
 )
 
 _debug = dict(
     DEBUG=True,
     LOG_LEVEL='DEBUG',
 
-    WAIT_BEFORE_SHUTDOWN_SEC=0,
+    WAIT_BEFORE_SHUTDOWN_SEC=1,
 )
 
 _production = dict(
