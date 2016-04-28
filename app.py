@@ -1,3 +1,4 @@
+#!venv/bin/python
 import logging
 import signal
 from datetime import timedelta
@@ -5,7 +6,7 @@ from datetime import timedelta
 from tornado.ioloop import IOLoop
 from tornado.options import options, define
 from tornado.httpserver import HTTPServer
-from tornado.web import Application
+from tornado.web import Application, RequestHandler
 
 import daemons
 from config import config
@@ -20,6 +21,10 @@ logging.basicConfig(format=LOG_FORMAT, datefmt='%Y-%m-%d %H:%M:%S', level='DEBUG
 
 log = logging.getLogger(__name__)
 
+class TransactionHandler(RequestHandler):
+
+    def get(self):
+        return 'Test'
 
 class App(Application):
     """ Tornado server application. """
@@ -27,7 +32,7 @@ class App(Application):
     def __init__(self):
         """ Configure handlers and settings. """
         handlers = [
-            # (r'/api/notify/dev/payment/(?P<payment_id>[\w]+)/?$', TransactionHandler),
+            (r'/api/notify/dev/payment/(?P<payment_id>[\w]+)/?$', TransactionHandler),
         ]
         settings = dict(debug=config['DEBUG'])
         super(App, self).__init__(handlers, **settings)

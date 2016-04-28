@@ -19,13 +19,6 @@ install:
 	sudo apt-get install -y rabbitmq-server
 
 
-# ----- Virtualenv -----
-
-venv_init:
-	if [ ! -d "venv" ]; then virtualenv --no-site-packages -p $(PYTHON) venv; fi;
-	bash -c "source venv/bin/activate && pip install --upgrade wheel && pip install -r requirements.txt"
-
-
 # ----- Queue -----
 
 queue_create:
@@ -37,6 +30,37 @@ queue_remove:
 	sudo rabbitmqctl delete_user $(QUEUE_USERNAME)
 	sudo rabbitmqctl delete_vhost $(QUEUE_VIRTUAL_HOST)
 
+
+# ----- Virtualenv -----
+
+venv_init:
+	if [ ! -d "venv" ]; then virtualenv --no-site-packages -p $(PYTHON) venv; fi;
+	bash -c "source venv/bin/activate && pip install --upgrade wheel && pip install -r requirements.txt"
+
+
+# ----- Setup -----
+
+setup: install venv_init
+
+
+# ----- Update -----
+
+update: venv_init
+
+
+# ----- Demo Server -----
+
+setup_demo:
+	fab setenv:demo setup
+
+deploy:
+	fab setenv:demo update
+
+
+# ----- Run Server -----
+
+runserver:
+	./app.py --debug=True
 
 # ========== MacOS ==========
 
