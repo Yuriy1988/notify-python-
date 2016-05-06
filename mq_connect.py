@@ -164,6 +164,8 @@ class QueueListener(_QueueConnect):
 
 if __name__ == '__main__':
 
+    logging.basicConfig(format=config['LOG_FORMAT'], datefmt='%Y-%m-%d %H:%M:%S', level='DEBUG')
+
     async def on_message(body):
         logging.info('Get message: %r', body)
 

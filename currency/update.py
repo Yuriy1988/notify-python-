@@ -1,11 +1,20 @@
 from requests import post
 
 from currency.parsers import parse_alphabank, parse_privat24
-from currency.utils.general import humanize
 
 
 API_HOST = 'http://localhost:7128'
 API_URL = API_HOST + '/api/admin/dev/currency/update'
+
+
+def humanize(string):
+    """
+    Convert solid string with '_' to human readable capitalize format (example: 'ab_cd' -> 'Ab cd')
+    :param string: string with '_'
+    :return: Humanized string
+    """
+    words = string.lower().split('_')
+    return " ".join(words).capitalize()
 
 
 def get_currency_data(**sources):

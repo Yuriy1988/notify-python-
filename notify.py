@@ -1,12 +1,30 @@
+from datetime import datetime
 from celery import Celery
 
 from currency import update
-from currency.utils.general import success_update_message
 from message_delivery.email import send_email, ADMIN_EMAIL, DEFAULT_MAIL_SENDER
 
 
 app = Celery(__file__)
 app.config_from_object("celeryconfig")
+
+
+def format_currency(currency_dict):
+    """
+    Returns formatted representation of currency rate.
+    :param currency_dict: currency raw data.
+    :return: formatted string.
+    """
+    return '{from_currency}/{to_currency}:\t {rate}'.format(**currency_dict)
+
+
+def success_update_message(rates, update_errors):
+    return "Exchange rates was successfully updated.\n\n{rates}\n\nCommit time (UTC): {date_time}\n\n{update_errors}"\
+        .format(
+            rates="\n".join(map(format_currency, rates)),
+            update_errors="\n".join(update_errors),
+            date_time=datetime.utcnow(),
+        )
 
 
 @app.task

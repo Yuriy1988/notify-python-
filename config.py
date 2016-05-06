@@ -14,7 +14,7 @@ _default = dict(
     QUEUE_SMS='notify_sms',
     QUEUE_TRANSACTION='transactions_status',
 
-    LOG_FORMAT = '[NOTIFY][%(levelname)s][%(name)s]|%(asctime)s| %(message)s'
+    LOG_FORMAT='[NOTIFY][%(levelname)s][%(name)s]|%(asctime)s| %(message)s'
 )
 
 _debug = dict(
