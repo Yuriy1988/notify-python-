@@ -1,108 +1,65 @@
 #!venv/bin/python
 import logging
-import signal
-from datetime import timedelta
+import argparse
+import asyncio
 
-from tornado.ioloop import IOLoop
-from tornado.options import options, define
-from tornado.httpserver import HTTPServer
-from tornado.web import Application, RequestHandler
-
-import daemons
 from config import config
-from queue_connector import QueueConsumer
+from mq_connect import QueueListener
 
 __author__ = 'Kostel Serhii'
 
-define("debug", default=False, help="run in debug mode", type=bool)
 
-LOG_FORMAT = '[NOTIFY][%(levelname)s]|%(asctime)s| %(message)s'
-logging.basicConfig(format=LOG_FORMAT, datefmt='%Y-%m-%d %H:%M:%S', level='DEBUG')
-
-log = logging.getLogger(__name__)
-
-class TransactionHandler(RequestHandler):
-
-    def get(self):
-        return 'Test'
-
-class App(Application):
-    """ Tornado server application. """
-
-    def __init__(self):
-        """ Configure handlers and settings. """
-        handlers = [
-            (r'/api/notify/dev/payment/(?P<payment_id>[\w]+)/?$', TransactionHandler),
-        ]
-        settings = dict(debug=config['DEBUG'])
-        super(App, self).__init__(handlers, **settings)
-
-
-def shutdown(http_server, queue_connect):
+def shutdown(loop, queue_connect):
     """
-    Stop server and all process.
+    Stop daemons and all process.
     Wait for connection closed and stop IOLoop.
 
-    :param http_server: server instance to stop
+    :param loop: current loop
     :param queue_connect: connection to the RabbitMQ
     """
-    io_loop = IOLoop.current()
+    log = logging.getLogger('shutdown')
 
     log.info('Stopping XOPay Notify Service...')
 
-    http_server.stop()
-    queue_connect.close()
+    loop.run_until_complete(queue_connect.close())
 
-    def finalize():
-        io_loop.stop()
-        log.info('Service stopped!')
+    log.info('Shutdown tasks')
+    for task in asyncio.Task.all_tasks():
+        task.cancel()
 
-    wait_sec = config['WAIT_BEFORE_SHUTDOWN_SEC']
-    if wait_sec:
-        io_loop.add_timeout(timedelta(seconds=wait_sec), finalize)
-    else:
-        finalize()
+    loop.close()
+    logging.info('XOPay Notify Service Stopped!')
 
 
 def main():
-    """ Parse arguments, update settings, start server and start IOLoop. """
+    """ Parse arguments, update settings and start main loop. """
+    parser = argparse.ArgumentParser(description='XOPay Notify Service.', allow_abbrev=False)
+    parser.add_argument('--debug', action='store_true', default=False, help='run in debug mode')
 
-    options.parse_command_line()
-
-    if options.debug:
+    args = parser.parse_args()
+    if args.debug:
         config.load_debug_config()
     else:
         config.load_production_config()
 
-    log.setLevel(config['LOG_LEVEL'])
+    logging.basicConfig(format=config['LOG_FORMAT'], datefmt='%Y-%m-%d %H:%M:%S', level=config['LOG_LEVEL'])
 
-    log.info('Starting XOPay Notify Service')
+    log = logging.getLogger('main')
+    log.info('Starting XOPay Notify Service...')
     if config['DEBUG']:
-        log.info('Debug mode is active!!')
+        log.info('Debug mode is active!')
 
-    app = App()
-    io_loop = IOLoop.current()
+    loop = asyncio.get_event_loop()
 
-    log.info('Run HTTP Notify Server on http://127.0.0.1:{port}/'.format(port=config['PORT']))
+    queue_connect = QueueListener(queue_handlers=[])
+    asyncio.ensure_future(queue_connect.connect())
 
-    server = HTTPServer(app)
-    server.listen(config['PORT'])
-
-    queue_connection_params = dict(
-        host=config['QUEUE_HOST'],
-        port=config['QUEUE_PORT'],
-        virtual_host=config['QUEUE_VIRTUAL_HOST'],
-        username=config['QUEUE_USERNAME'],
-        password=config['QUEUE_PASSWORD']
-    )
-
-    queue_connect = QueueConsumer(queue_connection_params, io_loop)
-    io_loop.spawn_callback(daemons.start_consumer, queue_connect, io_loop)
-
-    signal.signal(signal.SIGINT, lambda sig, frame: shutdown(server, queue_connect))
-    signal.signal(signal.SIGTERM, lambda sig, frame: shutdown(server, queue_connect))
-
-    io_loop.start()
+    try:
+        loop.run_forever()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        shutdown(loop, queue_connect)
 
 
 if __name__ == "__main__":

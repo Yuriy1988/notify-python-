@@ -13,13 +13,14 @@ _default = dict(
     QUEUE_EMAIL='notify_email',
     QUEUE_SMS='notify_sms',
     QUEUE_TRANSACTION='transactions_status',
+
+    LOG_FORMAT = '[NOTIFY][%(levelname)s][%(name)s]|%(asctime)s| %(message)s'
 )
 
 _debug = dict(
     DEBUG=True,
-    LOG_LEVEL='DEBUG',
 
-    WAIT_BEFORE_SHUTDOWN_SEC=1,
+    LOG_LEVEL='DEBUG',
 
     CLIENT_HOST='http://127.0.0.1:7254',
     CLIENT_API_VERSION='dev',
@@ -27,9 +28,8 @@ _debug = dict(
 
 _production = dict(
     DEBUG=False,
-    LOG_LEVEL='INFO',
 
-    WAIT_BEFORE_SHUTDOWN_SEC=3,
+    LOG_LEVEL='INFO',
 
     CLIENT_HOST='https://xopay.digitaloutlooks.com',
     CLIENT_API_VERSION='dev',

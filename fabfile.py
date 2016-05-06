@@ -14,12 +14,7 @@ hosts = dict(
 path_to_deploy = [
     'currency',
     'message_delivery',
-    'app.py',
-    'celeryconfig.py',
-    'config.py',
-    'daemons.py',
-    'notify.py',
-    'queue_connector.py',
+    '*.py',
     'requirements.txt',
     'Makefile',
 ]

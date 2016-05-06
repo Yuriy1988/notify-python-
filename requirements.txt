@@ -4,5 +4,4 @@ iso8601
 celery==3.1.23
 requests==2.9.1
 beautifulsoup4==4.4.1
-tornado==4.3
-pika==0.10.0
+aioamqp==0.7.0
