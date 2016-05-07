@@ -1,12 +1,8 @@
 import smtplib
 
-# mail settings TODO: unhardcode SMTP settings
-MAIL_SERVER = "smtp.gmail.com"
-MAIL_USERNAME = "daniel.omelchenko@digitaloutlooks.com"
-MAIL_PASSWORD = "Po03yeFGd54c9jHq"
-DEFAULT_MAIL_SENDER = "daniel.omelchenko@digitaloutlooks.com"
+from config import config
 
-ADMIN_EMAIL = "dpixelstudio@gmail.com"
+__author__ = 'Kostel Serhii'
 
 
 def send_email(email_from, email_to, subject, text):
@@ -18,8 +14,8 @@ def send_email(email_from, email_to, subject, text):
     :param text: mail content.
     :return:
     """
-    with smtplib.SMTP(MAIL_SERVER) as server:
+    with smtplib.SMTP(config['MAIL_SERVER']) as server:
         server.starttls()
-        server.login(MAIL_USERNAME, MAIL_PASSWORD)
+        server.login(config['MAIL_USERNAME'], config['MAIL_PASSWORD'])
         header = "From:{}\nSubject:{}\n\n".format(email_from, subject)
         server.sendmail(email_from, email_to, header + text)

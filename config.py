@@ -24,6 +24,12 @@ _debug = dict(
 
     CLIENT_HOST='http://127.0.0.1:7254',
     CLIENT_API_VERSION='dev',
+
+    MAIL_SERVER="smtp.gmail.com",
+    MAIL_USERNAME="daniel.omelchenko@digitaloutlooks.com",
+    MAIL_PASSWORD="Po03yeFGd54c9jHq",
+    MAIL_DEFAULT_SENDER="daniel.omelchenko@digitaloutlooks.com",
+
 )
 
 _production = dict(
@@ -33,6 +39,13 @@ _production = dict(
 
     CLIENT_HOST='https://xopay.digitaloutlooks.com',
     CLIENT_API_VERSION='dev',
+
+    # TODO: change production settings
+    MAIL_SERVER="smtp.gmail.com",
+    MAIL_USERNAME="daniel.omelchenko@digitaloutlooks.com",
+    MAIL_PASSWORD="Po03yeFGd54c9jHq",
+    MAIL_DEFAULT_SENDER="daniel.omelchenko@digitaloutlooks.com",
+
 )
 
 
