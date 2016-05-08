@@ -1,5 +1,4 @@
 from datetime import datetime
-from celery import Celery
 
 from currency import update
 from utils import send_email
@@ -7,8 +6,6 @@ from utils import send_email
 # TODO: add request to the admin service to get admin user email
 ADMIN_EMAIL = "dpixelstudio@gmail.com"
 
-app = Celery(__file__)
-app.config_from_object("celeryconfig")
 
 
 def format_currency(currency_dict):
@@ -29,7 +26,6 @@ def success_update_message(rates, update_errors):
         )
 
 
-@app.task
 def currency_update():
     rates, errors = update()
     # send email notification to admin
@@ -41,7 +37,6 @@ def currency_update():
     return bool(rates)
 
 
-@app.task
 def currency_update_report(message):
     send_email(
         email_to=ADMIN_EMAIL,
@@ -50,7 +45,6 @@ def currency_update_report(message):
     )
 
 
-@app.task
 def send_mail(recipient, subject, message):
     send_email(
         email_to=recipient,
