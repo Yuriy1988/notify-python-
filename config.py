@@ -4,7 +4,7 @@ __author__ = 'Kostel Serhii'
 _default = dict(
     PORT=7461,
 
-    QUEUE_HOST='127.0.01',
+    QUEUE_HOST='127.0.0.1',
     QUEUE_PORT=5672,
     QUEUE_USERNAME='xopay_rabbit',
     QUEUE_PASSWORD='5lf01xiOFwyMLvQrkzz7',

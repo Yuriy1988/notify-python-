@@ -1,7 +1,6 @@
 from datetime import datetime
 from celery import Celery
 
-from config import config
 from currency import update
 from utils import send_email
 
@@ -45,7 +44,6 @@ def currency_update():
 @app.task
 def currency_update_report(message):
     send_email(
-        email_from=config['MAIL_DEFAULT_SENDER'],
         email_to=ADMIN_EMAIL,
         subject="XOPAY. Exchange rates update.",
         text=message
@@ -55,7 +53,6 @@ def currency_update_report(message):
 @app.task
 def send_mail(recipient, subject, message):
     send_email(
-        email_from=config['MAIL_DEFAULT_SENDER'],
         email_to=recipient,
         subject=subject,
         text=message

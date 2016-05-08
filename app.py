@@ -5,6 +5,7 @@ import asyncio
 
 from config import config
 from mq_connect import QueueListener
+from transaction import transaction_queue_handler
 
 __author__ = 'Kostel Serhii'
 
@@ -51,7 +52,9 @@ def main():
 
     loop = asyncio.get_event_loop()
 
-    queue_connect = QueueListener(queue_handlers=[])
+    queue_connect = QueueListener(queue_handlers=[
+        (config['QUEUE_TRANSACTION'], transaction_queue_handler),
+    ])
     asyncio.ensure_future(queue_connect.connect())
 
     try:

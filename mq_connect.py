@@ -152,7 +152,7 @@ class QueueListener(_QueueConnect):
             callback = asyncio.coroutine(callback)
 
         async def _on_message(channel, body, envelope, properties):
-            cls._log.info('Received message #%s: %r', envelope.delivery_tag, body)
+            cls._log.debug('Received message #%s: %r', envelope.delivery_tag, body)
 
             await callback(body)
 
