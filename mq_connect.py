@@ -1,6 +1,8 @@
 import logging
 import aioamqp
 import asyncio
+import json
+from json.decoder import JSONDecodeError
 
 from config import config
 
@@ -145,6 +147,8 @@ class QueueListener(_QueueConnect):
         """
         Get on message callback function, make it async and
         wrap with basic queue ack after function end.
+        Decode queue message body to json dict.
+
         :param callback: on message handler
         :return: async callback with ack
         """
@@ -154,7 +158,12 @@ class QueueListener(_QueueConnect):
         async def _on_message(channel, body, envelope, properties):
             cls._log.debug('Received message #%s: %r', envelope.delivery_tag, body)
 
-            await callback(body)
+            try:
+                message = json.loads(body.decode())
+            except (JSONDecodeError, TypeError) as err:
+                cls._log.error('Wrong queue message [%r]: %r', body, err)
+            else:
+                await callback(message)
 
             cls._log.debug('Send message #%s ack', envelope.delivery_tag)
             await channel.basic_client_ack(delivery_tag=envelope.delivery_tag)

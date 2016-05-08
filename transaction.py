@@ -1,7 +1,5 @@
 import logging
 import asyncio
-import json
-from json.decoder import JSONDecodeError
 
 from config import config
 from utils import http_request
@@ -16,13 +14,11 @@ _log = logging.getLogger(__name__)
 async def transaction_queue_handler(message):
     """
     Transaction status queue handler.
-    :param message: bytes with information from queue
+    :param message: json dict with information from queue
     """
-    try:
-        payment = json.loads(message.decode())
-        pay_id, pay_status = payment['id'], payment['status']
-    except (JSONDecodeError, TypeError, KeyError) as err:
-        _log.error('Wrong transaction message [%r]: %r', message, err)
+    pay_id, pay_status = message.get('id'), message.get('status')
+    if not pay_id or not pay_status:
+        _log.error('Missing fields "id" or "status" in transaction message [%r]', message)
         return
 
     host, version = config['CLIENT_HOST'], config['CLIENT_API_VERSION']
