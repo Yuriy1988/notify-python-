@@ -1,6 +1,3 @@
-__author__ = 'Kostel Serhii'
-
-
 _default = dict(
     PORT=7461,
 
@@ -10,9 +7,9 @@ _default = dict(
     QUEUE_PASSWORD='5lf01xiOFwyMLvQrkzz7',
     QUEUE_VIRTUAL_HOST='/xopay',
 
+    QUEUE_TRANSACTION='transactions_status',
     QUEUE_EMAIL='notify_email',
     QUEUE_SMS='notify_sms',
-    QUEUE_TRANSACTION='transactions_status',
 
     LOG_FORMAT='[NOTIFY][%(levelname)s][%(name)s]|%(asctime)s| %(message)s'
 )

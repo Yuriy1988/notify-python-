@@ -18,7 +18,7 @@ async def transaction_queue_handler(message):
     """
     pay_id, pay_status = message.get('id'), message.get('status')
     if not pay_id or not pay_status:
-        _log.error('Missing fields "id" or "status" in transaction message [%r]', message)
+        _log.error('Missing required fields in transaction queue message [%r]', message)
         return
 
     host, version = config['CLIENT_HOST'], config['CLIENT_API_VERSION']

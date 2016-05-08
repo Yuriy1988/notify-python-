@@ -1,11 +1,35 @@
+import logging
 from datetime import datetime
 
 from currency import update
 from utils import send_email
 
+__author__ = 'Kostel Serhii'
+
+_log = logging.getLogger(__name__)
+
 # TODO: add request to the admin service to get admin user email
 ADMIN_EMAIL = "dpixelstudio@gmail.com"
 
+
+async def email_queue_handler(message):
+    """
+    Send email queue handler.
+    :param message: json dict with information from queue
+    """
+    if set(message.keys()) != {'email_to', 'subject', 'text'}:
+        _log.error('Wrong message fields in email queue [%r]', message)
+        return
+
+    await send_email(**message)
+
+
+async def sms_queue_handler(message):
+    """
+    Send sms queue handler.
+    :param message: json dict with information from queue
+    """
+    _log.warning('Send SMS function NOT IMPLEMENTED!')
 
 
 def format_currency(currency_dict):
@@ -37,17 +61,9 @@ def currency_update():
     return bool(rates)
 
 
-def currency_update_report(message):
-    send_email(
+async def currency_update_report(message):
+    await send_email(
         email_to=ADMIN_EMAIL,
         subject="XOPAY. Exchange rates update.",
-        text=message
-    )
-
-
-def send_mail(recipient, subject, message):
-    send_email(
-        email_to=recipient,
-        subject=subject,
         text=message
     )
