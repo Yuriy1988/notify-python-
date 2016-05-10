@@ -15,6 +15,7 @@ __author__ = 'Kostel Serhii'
 
 _log = logging.getLogger(__name__)
 _email_executor = concurrent.futures.ThreadPoolExecutor(max_workers=4)
+_sms_executor = concurrent.futures.ThreadPoolExecutor(max_workers=4)
 
 
 def _send_email_sync(email_to, subject, text, email_from=None):
@@ -42,13 +43,40 @@ def _send_email_sync(email_to, subject, text, email_from=None):
 async def send_email(email_to, subject, text, email_from=None):
     """
     Send email asyncronously with thread executor
-    :param email_from: senders email address. If None - use default
-    :param email_to: recipients email address
-    :param subject: mail subject
-    :param text: mail content
+    :param str email_to: recipients email address
+    :param str subject: mail subject
+    :param str text: mail content
+    :param str email_from: senders email address. If None - use default
     """
     loop = asyncio.get_event_loop()
     await loop.run_in_executor(_email_executor, _send_email_sync, email_to, subject, text, email_from)
+
+
+def _send_sms_sync(phone, text):
+    """
+    Send sms to the phone number.
+    :param str phone: recipients phone number
+    :param str text: sms content
+    """
+    _log.warning('Send SMS function NOT IMPLEMENTED!')
+
+
+async def send_sms(phone, text):
+    """
+    Send sms asyncronously with thread executor.
+    If + in phone is missing - it will be added.
+    :param str phone: recipients phone number in the international format
+    :param str text: sms content
+    """
+    if len(text) >= 127:
+        _log.error('Sms message too long: [%r]. SMS NOT SEND!', text)
+        return
+
+    if not phone.startswith('+'):
+        phone = '+' + phone
+
+    loop = asyncio.get_event_loop()
+    await loop.run_in_executor(_sms_executor, _send_sms_sync, phone, text)
 
 
 async def http_request(url, method='GET', body=None, params=None):

@@ -1,24 +1,28 @@
 import logging
 import asyncio
 
+import utils
 from config import config
-from utils import http_request
 
 __author__ = 'Kostel Serhii'
 
-_MAX_UPDATE_ATTEMPTS = 5
+# TODO: add request to the admin service to get admin user email
+ADMIN_EMAIL = "dpixelstudio@gmail.com"
 
+_MAX_UPDATE_ATTEMPTS = 5
 _log = logging.getLogger(__name__)
 
 
 async def transaction_queue_handler(message):
     """
     Transaction status queue handler.
+    Retry update on error.
+
     :param message: json dict with information from queue
     """
     pay_id, pay_status = message.get('id'), message.get('status')
     if not pay_id or not pay_status:
-        _log.error('Missing required fields in transaction queue message [%r]', message)
+        _log.error('Missing required fields in transaction queue message [%r]. Skip notify!', message)
         return
 
     host, version = config['CLIENT_HOST'], config['CLIENT_API_VERSION']
@@ -29,10 +33,9 @@ async def transaction_queue_handler(message):
     )
 
     for attempt in range(1, _MAX_UPDATE_ATTEMPTS+1):
-
         _log.info('Update payment %s status: [%s] (attempt: %d/%d)', pay_id, pay_status, attempt, _MAX_UPDATE_ATTEMPTS)
 
-        result = await http_request(**request_kwargs)
+        result = await utils.http_request(**request_kwargs)
         if result is not None:
             _log.info('Payment %s status updated successfully', pay_id)
             return
@@ -41,6 +44,30 @@ async def transaction_queue_handler(message):
                    pay_id, attempt, _MAX_UPDATE_ATTEMPTS)
 
         await asyncio.sleep(2 ** attempt)
-
     else:
         _log.critical('ERROR! Payment %s NOT UPDATED: %r', pay_id, request_kwargs['body'])
+
+
+async def email_queue_handler(message):
+    """
+    Send email queue handler.
+    :param message: json dict with information from queue
+    """
+    if set(message.keys()) != {'email_to', 'subject', 'text'}:
+        _log.error('Wrong fields in email queue request: [%r]. Skip notify!', message)
+        return
+
+    await utils.send_email(**message)
+
+
+async def sms_queue_handler(message):
+    """
+    Send sms queue handler.
+    :param message: json dict with information from queue
+    """
+    if set(message.keys()) != {'phone', 'text'}:
+        _log.error('Wrong fields in sms queue request: [%r]. Skip notify!', message)
+        return
+
+    await utils.send_sms(**message)
+

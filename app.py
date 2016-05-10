@@ -3,10 +3,9 @@ import logging
 import argparse
 import asyncio
 
+import queue_daemons
 from config import config
 from mq_connect import QueueListener
-from transaction import transaction_queue_handler
-from notify import email_queue_handler, sms_queue_handler
 
 __author__ = 'Kostel Serhii'
 
@@ -54,9 +53,9 @@ def main():
     loop = asyncio.get_event_loop()
 
     queue_connect = QueueListener(queue_handlers=[
-        (config['QUEUE_TRANSACTION'], transaction_queue_handler),
-        (config['QUEUE_EMAIL'], email_queue_handler),
-        (config['QUEUE_SMS'], sms_queue_handler),
+        (config['QUEUE_TRANSACTION'], queue_daemons.transaction_queue_handler),
+        (config['QUEUE_EMAIL'], queue_daemons.email_queue_handler),
+        (config['QUEUE_SMS'], queue_daemons.sms_queue_handler),
     ])
     asyncio.ensure_future(queue_connect.connect())
 
