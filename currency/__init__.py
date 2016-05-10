@@ -1,1 +1,1 @@
-from .update import update
+__author__ = 'Kostel Serhii'

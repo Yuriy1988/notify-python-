@@ -27,7 +27,7 @@ class CurrencyParseError(CurrencyError):
     pass
 
 
-async def get_page(url):
+async def _get_page(url):
     """
     Load html page async.
     :param url: page url
@@ -52,7 +52,7 @@ async def get_page(url):
     return resp_body
 
 
-async def parse_currency_from_alpha_bank():
+async def _parse_currency_from_alpha_bank():
     """
     Parse currency from Alpha Bank html page.
     Get exchange rate (as coefficient) for:
@@ -68,7 +68,7 @@ async def parse_currency_from_alpha_bank():
 
     _log.debug('Load and parse currency from Alpha bank html page')
 
-    page_html = await get_page(url)
+    page_html = await _get_page(url)
     if page_html is None:
         _log.error('Error loading page for Alpha Bank parser. Skip Parsing!')
         raise CurrencyLoadError('Error loading page for Alpha Bank (%s)' % url)
@@ -109,7 +109,7 @@ async def parse_currency_from_alpha_bank():
     ]
 
 
-async def parse_currency_from_privat_bank():
+async def _parse_currency_from_privat_bank():
     """
     Parse currency from Privat Bank html page.
     Get exchange rate (as coefficient) for:
@@ -127,7 +127,7 @@ async def parse_currency_from_privat_bank():
 
     _log.debug('Load and parse currency from Privat bank html page')
 
-    page_html = await get_page(url)
+    page_html = await _get_page(url)
     if not page_html:
         _log.error('Error load page for Privat Bank parser. Skip Parsing!')
         raise CurrencyLoadError('Error loading page for Privat Bank (%s)' % url)
@@ -175,7 +175,7 @@ async def parse_currency():
     """
     Connect all parsers result together
     """
-    parsers = (parse_currency_from_alpha_bank, parse_currency_from_privat_bank)
+    parsers = (_parse_currency_from_alpha_bank, _parse_currency_from_privat_bank)
     parse_res = await asyncio.gather(*[parse_func() for parse_func in parsers])
     return list(itertools.chain(parse_res)) if all(parse_res) else []
 
