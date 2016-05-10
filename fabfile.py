@@ -14,7 +14,9 @@ hosts = dict(
 path_to_deploy = [
     'currency',
     'message_queue',
-    '*.py',
+    'app.py',
+    'config.py',
+    'utils.py',
     'requirements.txt',
     'Makefile',
 ]
