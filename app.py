@@ -3,14 +3,15 @@ import logging
 import argparse
 import asyncio
 
-import queue_daemons
 from config import config
-from mq_connect import QueueListener
+import queue.handlers
+from queue.mq_connect import QueueListener
+from currency.daemon import CurrencyUpdateDaemon
 
 __author__ = 'Kostel Serhii'
 
 
-def shutdown(loop, queue_connect):
+def shutdown(loop, queue_connect, currency_daemon):
     """
     Stop daemons and all process.
     Wait for connection closed and stop IOLoop.
@@ -23,6 +24,8 @@ def shutdown(loop, queue_connect):
     log.info('Stopping XOPay Notify Service...')
 
     loop.run_until_complete(queue_connect.close())
+
+    currency_daemon.stop()
 
     log.info('Shutdown tasks')
     for task in asyncio.Task.all_tasks():
@@ -53,18 +56,21 @@ def main():
     loop = asyncio.get_event_loop()
 
     queue_connect = QueueListener(queue_handlers=[
-        (config['QUEUE_TRANSACTION'], queue_daemons.transaction_queue_handler),
-        (config['QUEUE_EMAIL'], queue_daemons.email_queue_handler),
-        (config['QUEUE_SMS'], queue_daemons.sms_queue_handler),
+        (config['QUEUE_TRANSACTION'], queue.handlers.transaction_queue_handler),
+        (config['QUEUE_EMAIL'], queue.handlers.email_queue_handler),
+        (config['QUEUE_SMS'], queue.handlers.sms_queue_handler),
     ])
     asyncio.ensure_future(queue_connect.connect())
+
+    currency_daemon = CurrencyUpdateDaemon(config['CURRENCY_UPDATE_HOURS'], config['CURRENCY_TIMEZONE'])
+    asyncio.ensure_future(currency_daemon.start())
 
     try:
         loop.run_forever()
     except KeyboardInterrupt:
         pass
     finally:
-        shutdown(loop, queue_connect)
+        shutdown(loop, queue_connect, currency_daemon)
 
 
 if __name__ == "__main__":

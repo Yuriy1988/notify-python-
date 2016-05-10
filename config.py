@@ -11,6 +11,9 @@ _default = dict(
     QUEUE_EMAIL='notify_email',
     QUEUE_SMS='notify_sms',
 
+    CURRENCY_UPDATE_HOURS=(0, 6, 12, 18),
+    CURRENCY_TIMEZONE='Europe/Riga',
+
     # TODO: add request to the admin service to get admin user email
     ADMIN_EMAIL = "dpixelstudio@gmail.com",
 
