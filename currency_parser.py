@@ -6,11 +6,26 @@ from aiohttp.errors import ClientError
 from decimal import Decimal, getcontext
 from bs4 import BeautifulSoup, CData
 
+__author__ = 'Kostel Serhii'
+
+
+_log = logging.getLogger(__name__)
 
 # Currency rate precision
 getcontext().prec = 6
 
-_log = logging.getLogger(__name__)
+
+class CurrencyError(Exception):
+    pass
+
+
+class CurrencyLoadError(CurrencyError):
+    pass
+
+
+class CurrencyParseError(CurrencyError):
+    pass
+
 
 async def get_page(url):
     """
@@ -46,14 +61,17 @@ async def parse_currency_from_alpha_bank():
         RUB -> EUR
         RUB -> USD
 
-    :return list with dict(from_currency, to_currency, rate) or [] on Error
+    :return list with dict(from_currency, to_currency, rate)
+    :raise CurrencyLoadError, CurrencyParseError
     """
+    url = "https://alfabank.ru/_/rss/_currency.html"
+
     _log.debug('Load and parse currency from Alpha bank html page')
 
-    page_html = await get_page("https://alfabank.ru/_/rss/_currency.html")
-    if not page_html:
-        _log.error('Error load page for Alpha Bank parser. Skip Parsing!')
-        return []
+    page_html = await get_page(url)
+    if page_html is None:
+        _log.error('Error loading page for Alpha Bank parser. Skip Parsing!')
+        raise CurrencyLoadError('Error loading page for Alpha Bank (%s)' % url)
 
     try:
         page_soup = BeautifulSoup(page_html, "html.parser")
@@ -81,7 +99,7 @@ async def parse_currency_from_alpha_bank():
 
     except Exception as err:
         _log.error('Error parsing currency from Alpha bank: %r', err)
-        return []
+        raise CurrencyParseError('Error parsing currency from Alpha bank (%s)' % url)
 
     return [
         dict(from_currency='EUR', to_currency='RUB', rate=str(eur_rub_rate)),
@@ -102,14 +120,17 @@ async def parse_currency_from_privat_bank():
         UAH -> USD
         UAH -> RUB
 
-    :return list with dict(from_currency, to_currency, rate) or [] on Error
+    :return list with dict(from_currency, to_currency, rate)
+    :raise CurrencyLoadError, CurrencyParseError
     """
+    url = "https://api.privatbank.ua/p24api/pubinfo?exchange&coursid=5"
+
     _log.debug('Load and parse currency from Privat bank html page')
 
-    page_html = await get_page("https://api.privatbank.ua/p24api/pubinfo?exchange&coursid=5")
+    page_html = await get_page(url)
     if not page_html:
         _log.error('Error load page for Privat Bank parser. Skip Parsing!')
-        return []
+        raise CurrencyLoadError('Error loading page for Privat Bank (%s)' % url)
 
     try:
         page_soup = BeautifulSoup(page_html, "html.parser")
@@ -139,7 +160,7 @@ async def parse_currency_from_privat_bank():
 
     except Exception as err:
         _log.error('Error parsing currency from Privat bank: %r', err)
-        return []
+        raise CurrencyParseError('Error parsing currency from Privat Bank (%s)' % url)
 
     return [
         dict(from_currency='EUR', to_currency='UAH', rate=str(eur_uah_rate)),
