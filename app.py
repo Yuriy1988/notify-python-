@@ -4,8 +4,8 @@ import argparse
 import asyncio
 
 from config import config
-import queue.handlers
-from queue.mq_connect import QueueListener
+import message_queue.handlers
+from message_queue.connect import QueueListener
 from currency.daemon import CurrencyUpdateDaemon
 
 __author__ = 'Kostel Serhii'
@@ -56,14 +56,14 @@ def main():
     loop = asyncio.get_event_loop()
 
     queue_connect = QueueListener(queue_handlers=[
-        (config['QUEUE_TRANSACTION'], queue.handlers.transaction_queue_handler),
-        (config['QUEUE_EMAIL'], queue.handlers.email_queue_handler),
-        (config['QUEUE_SMS'], queue.handlers.sms_queue_handler),
+        (config['QUEUE_TRANSACTION'], message_queue.handlers.transaction_queue_handler),
+        (config['QUEUE_EMAIL'], message_queue.handlers.email_queue_handler),
+        (config['QUEUE_SMS'], message_queue.handlers.sms_queue_handler),
     ])
     asyncio.ensure_future(queue_connect.connect())
 
     currency_daemon = CurrencyUpdateDaemon(config['CURRENCY_UPDATE_HOURS'], config['CURRENCY_TIMEZONE'])
-    asyncio.ensure_future(currency_daemon.start())
+    currency_daemon.start()
 
     try:
         loop.run_forever()
