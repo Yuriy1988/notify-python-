@@ -15,7 +15,7 @@ _default = dict(
     CURRENCY_TIMEZONE='Europe/Riga',
 
     # TODO: add request to the admin service to get admin user email
-    ADMIN_EMAIL = "dpixelstudio@gmail.com",
+    ADMIN_EMAIL="serhii.kostel@digitaloutlooks.com",
 
     LOG_FORMAT='[NOTIFY][%(levelname)s][%(name)s]|%(asctime)s| %(message)s'
 )
