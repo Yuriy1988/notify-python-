@@ -6,6 +6,7 @@ from config import config
 
 __author__ = 'Kostel Serhii'
 
+
 # TODO: add request to the admin service to get admin user email
 ADMIN_EMAIL = "dpixelstudio@gmail.com"
 

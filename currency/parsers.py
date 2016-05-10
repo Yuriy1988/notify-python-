@@ -1,110 +1,163 @@
-from decimal import Decimal
-
-import requests
+import logging
+import asyncio
+import aiohttp
+import itertools
+from aiohttp.errors import ClientError
+from decimal import Decimal, getcontext
 from bs4 import BeautifulSoup, CData
 
 
-def catch_parse_errors(func):
+# Currency rate precision
+getcontext().prec = 6
+
+_log = logging.getLogger(__name__)
+
+async def get_page(url):
     """
-    Catch all exceptions. If there are some return [] otherwise func return value.
-    :param func: decorated function.
-    :return: func.
+    Load html page async.
+    :param url: page url
+    :return: page html content or None on error
     """
-    def wrapper():
-        try:
-            return func()
-        except Exception as ex:
-            # TODO: add logging
-            return []
-    return wrapper
+    _log.debug('Load page url: %s', url)
+    try:
+        with aiohttp.ClientSession() as session:
+            with aiohttp.Timeout(10):
+                async with session.get(url) as response:
+                    rest_status = response.status
+                    resp_body = await response.text()
+
+    except (TimeoutError, ClientError) as err:
+        _log.critical('HTTP Page Loader request error: %r', err)
+        return None
+
+    if rest_status != 200:
+        _log.error('HTTP Page Loader wrong status %d', rest_status)
+        return None
+
+    return resp_body
 
 
-@catch_parse_errors
-def parse_alphabank():
-    # Парсим alfabank.ru
-    page1 = requests.get("https://alfabank.ru/_/rss/_currency.html")
-    soup1 = BeautifulSoup(page1.text, "html.parser")
+async def parse_currency_from_alpha_bank():
+    """
+    Parse currency from Alpha Bank html page.
+    Get exchange rate (as coefficient) for:
+        EUR -> RUB
+        USD -> RUB
+        RUB -> EUR
+        RUB -> USD
 
-    for cd in soup1.findAll(text=True):
-        if isinstance(cd, CData):
-            cd_data = cd.encode('cp1251')
+    :return list with dict(from_currency, to_currency, rate) or [] on Error
+    """
+    _log.debug('Load and parse currency from Alpha bank html page')
 
-    soup1_1 = BeautifulSoup(cd_data, "html.parser")
+    page_html = await get_page("https://alfabank.ru/_/rss/_currency.html")
+    if not page_html:
+        _log.error('Error load page for Alpha Bank parser. Skip Parsing!')
+        return []
 
-    # Получаем соотношение евро к рублю (покупка)
-    eur_rur_buy = soup1_1.find(
-        'td',
-        {'id': 'ЕвроnoncashBuy'}
-    ).text.replace(',', '.')
+    try:
+        page_soup = BeautifulSoup(page_html, "html.parser")
 
-    # Получаем соотношение евро к рублю (продажа)
-    eur_rur_sale = soup1_1.find(
-        'td',
-        {'id': 'ЕвроnoncashSell'}
-    ).text.replace(',', '.')
+        for cd in page_soup.findAll(text=True):
+            if isinstance(cd, CData):
+                cd_data = cd.encode('cp1251')
+                page_soup = BeautifulSoup(cd_data, "html.parser")
 
-    # Получаем соотношение доллара к рублю (покупка)
-    usd_rur_buy = soup1_1.find(
-        'td',
-        {'id': 'Доллар СШАnoncashBuy'}
-    ).text.replace(',', '.')
+        # EUR -> RUB
+        eur_rub_buy = page_soup.find('td', {'id': 'ЕвроnoncashBuy'}).text
+        eur_rub_rate = Decimal(eur_rub_buy.replace(',', '.'))
 
-    # Получаем соотношение рубля к доллару (продажа)
-    usd_rur_sale = soup1_1.find(
-        'td',
-        {'id': 'Доллар СШАnoncashSell'}
-    ).text.replace(',', '.')
+        # USD -> RUB
+        usd_rub_buy = page_soup.find('td', {'id': 'Доллар СШАnoncashBuy'}).text
+        usd_rub_rate = Decimal(usd_rub_buy.replace(',', '.'))
+
+        # RUB -> EUR
+        eur_rub_sale = page_soup.find('td', {'id': 'ЕвроnoncashSell'}).text
+        rub_eur_rate = Decimal(1)/Decimal(eur_rub_sale.replace(',', '.'))
+
+        # RUB -> USD
+        usd_rub_sale = page_soup.find('td', {'id': 'Доллар СШАnoncashSell'}).text
+        rub_usd_rate = Decimal(1)/Decimal(usd_rub_sale.replace(',', '.'))
+
+    except Exception as err:
+        _log.error('Error parsing currency from Alpha bank: %r', err)
+        return []
 
     return [
-        dict(
-            from_currency='RUB',
-            to_currency='EUR',
-            rate=str(Decimal(1)/Decimal(eur_rur_sale)),
-        ),
-        dict(
-            from_currency='EUR',
-            to_currency='RUB',
-            rate=str(Decimal(eur_rur_buy)),
-        ),
-        dict(
-            from_currency='RUB',
-            to_currency='USD',
-            rate=str(Decimal(1)/Decimal(usd_rur_sale)),
-        ),
-        dict(
-            from_currency='USD',
-            to_currency='RUB',
-            rate=str(Decimal(usd_rur_buy)),
-        )
+        dict(from_currency='EUR', to_currency='RUB', rate=str(eur_rub_rate)),
+        dict(from_currency='USD', to_currency='RUB', rate=str(usd_rub_rate)),
+        dict(from_currency='RUB', to_currency='EUR', rate=str(rub_eur_rate)),
+        dict(from_currency='RUB', to_currency='USD', rate=str(rub_usd_rate)),
     ]
 
 
-@catch_parse_errors
-def parse_privat24():
-    currency_records = []
-    # Парсим https://api.privatbank.ua/p24api/pubinfo?exchange&coursid=5
-    page2 = requests.get("https://api.privatbank.ua/p24api/pubinfo?exchange&coursid=5")
-    soup2 = BeautifulSoup(page2.text, "html.parser")
+async def parse_currency_from_privat_bank():
+    """
+    Parse currency from Privat Bank html page.
+    Get exchange rate (as coefficient) for:
+        EUR -> UAH
+        USD -> UAH
+        RUB -> UAH
+        UAH -> EUR
+        UAH -> USD
+        UAH -> RUB
 
-    for currency in soup2.findAll('exchangerate'):
+    :return list with dict(from_currency, to_currency, rate) or [] on Error
+    """
+    _log.debug('Load and parse currency from Privat bank html page')
 
-        # Obtain exchange rates for UAH (RUR, USD, EUR):
-        if currency.attrs['base_ccy'] == 'UAH':
-            ccy = currency.attrs.get('ccy')
-            ccy = 'RUB' if ccy == 'RUR' else ccy
-            currency_records.extend([
-                dict(
-                    from_currency=currency.attrs.get('base_ccy'),
-                    to_currency=ccy,
-                    rate=str(Decimal(1)/Decimal(currency.attrs.get('sale'))),
-                ),
-                dict(
-                    from_currency=ccy,
-                    to_currency=currency.attrs.get('base_ccy'),
-                    rate=str(Decimal(currency.attrs.get('buy'))),
-                )]
-            )
-    return currency_records
+    page_html = await get_page("https://api.privatbank.ua/p24api/pubinfo?exchange&coursid=5")
+    if not page_html:
+        _log.error('Error load page for Privat Bank parser. Skip Parsing!')
+        return []
+
+    try:
+        page_soup = BeautifulSoup(page_html, "html.parser")
+        exchanges = (currency.attrs for currency in page_soup.findAll('exchangerate'))
+
+        exchange_UAH = {exch['ccy']: exch for exch in exchanges if exch['base_ccy'] == 'UAH'}
+        if 'RUR' in exchange_UAH:
+            exchange_UAH['RUB'] = exchange_UAH['RUR']
+
+        # EUR -> UAH
+        eur_uah_rate = Decimal(exchange_UAH['EUR']['buy'])
+
+        # USD -> UAH
+        usd_uah_rate = Decimal(exchange_UAH['USD']['buy'])
+
+        # RUB -> UAH
+        rub_uah_rate = Decimal(exchange_UAH['RUB']['buy'])
+
+        # UAH -> EUR
+        uah_eur_rate = Decimal(1)/Decimal(exchange_UAH['EUR']['sale'])
+
+        # UAH -> USD
+        uah_usd_rate = Decimal(1)/Decimal(exchange_UAH['USD']['sale'])
+
+        # UAH -> RUB
+        uah_rub_rate = Decimal(1)/Decimal(exchange_UAH['RUB']['sale'])
+
+    except Exception as err:
+        _log.error('Error parsing currency from Privat bank: %r', err)
+        return []
+
+    return [
+        dict(from_currency='EUR', to_currency='UAH', rate=str(eur_uah_rate)),
+        dict(from_currency='USD', to_currency='UAH', rate=str(usd_uah_rate)),
+        dict(from_currency='RUB', to_currency='UAH', rate=str(rub_uah_rate)),
+        dict(from_currency='UAH', to_currency='EUR', rate=str(uah_eur_rate)),
+        dict(from_currency='UAH', to_currency='USD', rate=str(uah_usd_rate)),
+        dict(from_currency='UAH', to_currency='RUB', rate=str(uah_rub_rate)),
+    ]
+
+async def parse_currency():
+    """
+    Connect all parsers result together
+    """
+    parsers = (parse_currency_from_alpha_bank, parse_currency_from_privat_bank)
+    parse_res = await asyncio.gather(*[parse_func() for parse_func in parsers])
+    return list(itertools.chain(parse_res)) if all(parse_res) else []
+
 
 
 # TODO: need research. Which exchange rate are exactly needed.
@@ -116,3 +169,20 @@ def parse_privat24():
 # cross_rate_record = cross_rate.find('cross_rate_record', {'mnem': 'EUR/USD'})
 # # Получаем соотношение евро к доллару (продажа)
 # eur_usd_sale = cross_rate_record['rate']
+
+
+if __name__ == '__main__':
+
+    logging.basicConfig(datefmt='%Y-%m-%d %H:%M:%S', level='DEBUG')
+
+    async def parser():
+        currency = await parse_currency()
+        logging.info('Currency: %r', currency)
+
+    loop = asyncio.get_event_loop()
+
+    logging.info(' [*] Start')
+    loop.run_until_complete(parser())
+
+    logging.info(' [*] Stopped')
+    loop.close()
