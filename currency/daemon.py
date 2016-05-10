@@ -27,7 +27,7 @@ class CurrencyUpdateDaemon:
 
     def start(self):
         _log.info('Start currency update daemon')
-        asyncio.ensure_future(self._daemon_loop)
+        asyncio.ensure_future(self._daemon_loop())
 
     def stop(self):
         _log.info('Start currency update daemon')
@@ -80,14 +80,14 @@ class CurrencyUpdateDaemon:
         day_offset = now.replace(hour=0, minute=0, second=0, microsecond=0) - now
 
         update_time = (day_offset + timedelta(days=d, hours=h) for d in (0, 1) for h in self._update_hours)
-        nearest = min((ut for ut in update_time if ut > 0))
+        nearest = min((ut for ut in update_time if ut > timedelta(0)))
 
         return nearest.total_seconds()
 
     async def _daemon_loop(self):
         """ Infinite update currency loop """
         while not self._closing:
-            await asyncio.sleep(self._get_next_update_timeout_sec)
+            await asyncio.sleep(self._get_next_update_timeout_sec())
             try:
                 await self._update_currency()
             except Exception as err:
