@@ -2,15 +2,12 @@ import logging
 import asyncio
 
 import utils
-from config import config
 
 __author__ = 'Kostel Serhii'
 
 
-# TODO: add request to the admin service to get admin user email
-ADMIN_EMAIL = "dpixelstudio@gmail.com"
-
 _MAX_UPDATE_ATTEMPTS = 5
+
 _log = logging.getLogger(__name__)
 
 
@@ -26,10 +23,9 @@ async def transaction_queue_handler(message):
         _log.error('Missing required fields in transaction queue message [%r]. Skip notify!', message)
         return
 
-    host, version = config['CLIENT_HOST'], config['CLIENT_API_VERSION']
     request_kwargs = dict(
         method='PUT',
-        url='{host}/api/client/{version}/payment/{pay_id}'.format(host=host, version=version, pay_id=pay_id),
+        url=utils.get_client_base_url() + '/payment/' + str(pay_id),
         body={'status': pay_status}
     )
 

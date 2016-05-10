@@ -80,6 +80,10 @@ async def send_sms(phone, text):
     await loop.run_in_executor(_sms_executor, _send_sms_sync, phone, text)
 
 
+def get_client_base_url():
+    return '{host}/api/client/{version}'.format(host=config['CLIENT_HOST'], version=config['CLIENT_API_VERSION'])
+
+
 async def http_request(url, method='GET', body=None, params=None):
     """
     Create async http request to the REST API.

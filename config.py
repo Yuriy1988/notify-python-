@@ -11,6 +11,9 @@ _default = dict(
     QUEUE_EMAIL='notify_email',
     QUEUE_SMS='notify_sms',
 
+    # TODO: add request to the admin service to get admin user email
+    ADMIN_EMAIL = "dpixelstudio@gmail.com",
+
     LOG_FORMAT='[NOTIFY][%(levelname)s][%(name)s]|%(asctime)s| %(message)s'
 )
 
