@@ -13,48 +13,6 @@ __author__ = 'Kostel Serhii'
 _log = logging.getLogger(__name__)
 
 
-async def _report(text):
-    await utils.send_email(email_to=config['ADMIN_EMAIL'], subject="XOPAY: Exchange rates update.", text=text)
-
-
-async def _report_success(currency):
-    formatted = '{from_currency}/{to_currency}:\t {rate}'.format
-    text = 'Exchange rates was successfully updated.\n\n{rates}\n\nCommit time (UTC): {date_time}'
-    await _report(text.format(rates="\n".join(map(formatted, currency)), date_time=datetime.utcnow()))
-
-
-async def _report_error(error):
-    text = 'Failed to upgrade the exchange rate!\n\nProblem description: {error}\n\nCommit time (UTC): {date_time}'
-    await _report(text.format(error=error, date_time=datetime.utcnow()))
-
-
-async def _update_currency():
-    """
-    Update currency data from specified sources and
-    send notification to the xopay admin email.
-    """
-    _log.debug('Update currency exchange information')
-
-    try:
-        currency = await parse_currency()
-    except CurrencyError as err:
-        _log.error('Error load currency: %r', err)
-        asyncio.ensure_future(_report_error(err))
-        return
-
-    url = utils.get_client_base_url() + '/currency/update'
-    result = await utils.http_request(url, method='POST', body={'update': currency})
-
-    if result is None:
-        err = 'Wrong response from Admin Service.'
-        _log.error('Error update currency: %r', err)
-        asyncio.ensure_future(_report_error(err))
-        return
-
-    _log.info('Currency exchange information updated successfully')
-    asyncio.ensure_future(_report_success(currency))
-
-
 class CurrencyUpdateDaemon:
     """
     Schedule currency update.
@@ -62,16 +20,59 @@ class CurrencyUpdateDaemon:
     Default Timezone: Europe/Riga (GMT+3)
     """
 
-    def __init__(self, update_hours=(0, 6, 12, 18), timezone='Europe/Riga'):
+    def __init__(self, update_hours=(0,), timezone='UTC'):
         self._closing = False
         self._update_hours = update_hours
         self._timezone = timezone
 
     def start(self):
+        _log.info('Start currency update daemon')
         asyncio.ensure_future(self._daemon_loop)
 
     def stop(self):
+        _log.info('Start currency update daemon')
         self._closing = True
+
+    async def _update_currency(self):
+        """
+        Update currency data from specified sources and
+        send notification to the xopay admin email.
+        """
+        _log.debug('Update currency exchange information')
+
+        try:
+            currency = await parse_currency()
+        except CurrencyError as err:
+            _log.error('Error load currency: %r', err)
+            asyncio.ensure_future(self._report_error(err))
+            return
+
+        url = utils.get_client_base_url() + '/currency/update'
+        result = await utils.http_request(url, method='POST', body={'update': currency})
+
+        if result is None:
+            err = 'Wrong response from Admin Service.'
+            _log.error('Error update currency: %r', err)
+            asyncio.ensure_future(self._report_error(err))
+            return
+
+        _log.info('Currency exchange information updated successfully')
+        asyncio.ensure_future(self._report_success(currency))
+
+    @staticmethod
+    async def _report(text):
+        await utils.send_email(email_to=config['ADMIN_EMAIL'], subject="XOPAY: Exchange rates update.", text=text)
+
+    async def _report_success(self, currency):
+        formatted = '{from_currency}/{to_currency}:\t {rate}'.format
+        text = 'Exchange rates was successfully updated.\n\n{rates}\n\nCommit time (UTC): {timestamp}'
+        timestamp = datetime.now(tz=pytz.timezone(self._timezone))
+        await self._report(text.format(rates="\n".join(map(formatted, currency)), timestamp=timestamp))
+
+    async def _report_error(self, error):
+        text = 'Failed to upgrade the exchange rate!\n\nProblem description: {error}\n\nCommit time (UTC): {timestamp}'
+        timestamp = datetime.now(tz=pytz.timezone(self._timezone))
+        await self._report(text.format(error=error, timestamp=timestamp))
 
     def _get_next_update_timeout_sec(self):
         """ Return the number of seconds till next update time """
@@ -88,6 +89,6 @@ class CurrencyUpdateDaemon:
         while not self._closing:
             await asyncio.sleep(self._get_next_update_timeout_sec)
             try:
-                await _update_currency()
+                await self._update_currency()
             except Exception as err:
                 _log.exception('Unexpected error while currency updating: %r', err)
