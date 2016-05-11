@@ -11,6 +11,26 @@ _MAX_UPDATE_ATTEMPTS = 5
 _log = logging.getLogger(__name__)
 
 
+async def _update_transaction_retry(pay_id, url, method, body):
+    """ Retry transaction update """
+
+    for attempt in range(_MAX_UPDATE_ATTEMPTS):
+
+        await asyncio.sleep(2 ** attempt)
+
+        attempt_msg = '(attempt: %d/%d)' % (attempt + 1, _MAX_UPDATE_ATTEMPTS)
+        _log.info('Update payment %s with: [%r] %s', pay_id, body, attempt_msg)
+
+        result = await utils.http_request(url=url, method=method, body=body)
+        if result is not None:
+            _log.info('Payment %s status updated successfully with: [%r]', pay_id, body)
+            return
+
+        _log.error('Error update payment %s status! %s Retry after timeout...', pay_id, attempt_msg)
+
+    _log.critical('ERROR! Payment %s NOT UPDATED!!!', pay_id)
+
+
 async def transaction_queue_handler(message):
     """
     Transaction status queue handler.
@@ -23,26 +43,17 @@ async def transaction_queue_handler(message):
         _log.error('Missing required fields in transaction queue message [%r]. Skip notify!', message)
         return
 
-    request_kwargs = dict(
-        method='PUT',
-        url=utils.get_client_base_url() + '/payment/' + str(pay_id),
-        body={'status': pay_status}
-    )
+    url = utils.get_client_base_url() + '/payment/%s' % pay_id
+    request_kwargs = dict(url=url, method='PUT', body={'status': pay_status})
 
-    for attempt in range(1, _MAX_UPDATE_ATTEMPTS+1):
-        _log.info('Update payment %s status: [%s] (attempt: %d/%d)', pay_id, pay_status, attempt, _MAX_UPDATE_ATTEMPTS)
+    result = await utils.http_request(**request_kwargs)
 
-        result = await utils.http_request(**request_kwargs)
-        if result is not None:
-            _log.info('Payment %s status updated successfully', pay_id)
-            return
+    if result is None:
+        _log.error('Error update payment %s status! Try again later in the background...', pay_id)
+        asyncio.ensure_future(_update_transaction_retry(pay_id, **request_kwargs))
+        return
 
-        _log.error('Error update payment %s status! (attempt: %d/%d)! Retry after timeout...',
-                   pay_id, attempt, _MAX_UPDATE_ATTEMPTS)
-
-        await asyncio.sleep(2 ** attempt)
-    else:
-        _log.critical('ERROR! Payment %s NOT UPDATED: %r', pay_id, request_kwargs['body'])
+    _log.info('Payment %s status updated successfully with status: %s', pay_id, pay_status)
 
 
 async def email_queue_handler(message):
