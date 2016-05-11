@@ -64,10 +64,10 @@ class CurrencyUpdateDaemon:
         await utils.send_email(email_to=config['ADMIN_EMAIL'], subject="XOPAY: Exchange rates update.", text=text)
 
     async def _report_success(self, currency):
-        formatted = '{from_currency}/{to_currency}:\t {rate}'.format
+        rates = '\n'.join('{from_currency}/{to_currency}:\t {rate}'.format(**curr) for curr in currency)
         text = 'Exchange rates was successfully updated.\n\n{rates}\n\nCommit time (UTC): {timestamp}'
         timestamp = datetime.now(tz=pytz.timezone(self._timezone))
-        await self._report(text.format(rates="\n".join(map(formatted, currency)), timestamp=timestamp))
+        await self._report(text.format(rates=rates, timestamp=timestamp))
 
     async def _report_error(self, error):
         text = 'Failed to upgrade the exchange rate!\n\nProblem description:\n{error}\n\nCommit time (UTC): {timestamp}'
