@@ -80,7 +80,7 @@ class CurrencyUpdateDaemon:
         day_offset = now.replace(hour=0, minute=0, second=0, microsecond=0) - now
 
         update_time = (day_offset + timedelta(days=d, hours=h) for d in (0, 1) for h in self._update_hours)
-        nearest = min((ut for ut in update_time if ut > timedelta(0)))
+        nearest = min((ut for ut in update_time if ut > timedelta(minutes=30)))
 
         return round(nearest.total_seconds())
 
