@@ -14,7 +14,7 @@ from config import config
 __author__ = 'Kostel Serhii'
 
 
-_log = logging.getLogger(__name__)
+_log = logging.getLogger('utils')
 _email_executor = concurrent.futures.ThreadPoolExecutor(max_workers=4)
 _sms_executor = concurrent.futures.ThreadPoolExecutor(max_workers=4)
 

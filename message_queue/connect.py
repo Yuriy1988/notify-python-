@@ -9,6 +9,9 @@ from config import config
 __author__ = 'Kostel Serhii'
 
 
+_log = logging.getLogger('mq.connect')
+
+
 class _QueueConnect(object):
     """
     Async connector to RabbitMQ.
@@ -32,8 +35,6 @@ class _QueueConnect(object):
         auto_delete=False,
         nowait=False
     )
-
-    _log = logging.getLogger(__name__)
 
     def __init__(self, connect_parameters=None):
         """
@@ -64,27 +65,27 @@ class _QueueConnect(object):
             try:
                 self._transport, self._protocol = await aioamqp.connect(**self._connect_params)
             except aioamqp.AioamqpException as err:
-                self._log.error("Queue connection error: %r \nReconnecting...", err)
+                _log.error("Queue connection error: %r \nReconnecting...", err)
                 continue
 
-            self._log.info('Connected to the RabbitMQ')
+            _log.info('Connected to the RabbitMQ')
 
             try:
                 await self._chanel_connection()
             except aioamqp.AioamqpException as err:
-                self._log.error("Chanel connection error: %r \nReconnecting...", err)
+                _log.error("Chanel connection error: %r \nReconnecting...", err)
                 continue
 
             self._reset_reconnect_timeout()
 
-            self._log.info('Start queue connection loop')
+            _log.info('Start queue connection loop')
             await self._waiter.wait()
 
         logging.info('Queue connection loop has been finished!')
 
     async def close(self):
         """ Close connection to the RabbitMQ """
-        self._log.info('Close queue connection')
+        _log.info('Close queue connection')
         self._closing = True
         self._waiter.set()
 
@@ -142,8 +143,8 @@ class QueueListener(_QueueConnect):
             await channel.queue_declare(queue_name=queue_name, durable=True)
             await channel.basic_consume(callback, queue_name=queue_name)
 
-    @classmethod
-    def _wrap_on_msg_callback_with_ack(cls, callback):
+    @staticmethod
+    def _wrap_on_msg_callback_with_ack(callback):
         """
         Get on message callback function, make it async and
         wrap with basic queue ack after function end.
@@ -156,16 +157,16 @@ class QueueListener(_QueueConnect):
             callback = asyncio.coroutine(callback)
 
         async def _on_message(channel, body, envelope, properties):
-            cls._log.debug('Received message #%s: %r', envelope.delivery_tag, body)
+            _log.debug('Received message #%s: %r', envelope.delivery_tag, body)
 
             try:
                 message = json.loads(body.decode())
             except (JSONDecodeError, TypeError) as err:
-                cls._log.error('Wrong queue message [%r]: %r', body, err)
+                _log.error('Wrong queue message [%r]: %r', body, err)
             else:
                 await callback(message)
 
-            cls._log.debug('Send message #%s ack', envelope.delivery_tag)
+            _log.debug('Send message #%s ack', envelope.delivery_tag)
             await channel.basic_client_ack(delivery_tag=envelope.delivery_tag)
 
         return _on_message

@@ -32,7 +32,7 @@ def shutdown(loop, queue_connect, currency_daemon):
         task.cancel()
 
     loop.close()
-    logging.info('XOPay Notify Service Stopped!')
+    log.info('XOPay Notify Service Stopped!')
 
 
 def main():
@@ -45,8 +45,6 @@ def main():
         config.load_debug_config()
     else:
         config.load_production_config()
-
-    logging.basicConfig(format=config['LOG_FORMAT'], datefmt='%Y-%m-%d %H:%M:%S', level=config['LOG_LEVEL'])
 
     log = logging.getLogger('main')
     log.info('Starting XOPay Notify Service...')

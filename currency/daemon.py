@@ -10,7 +10,7 @@ from currency.parser import parse_currency, CurrencyError
 __author__ = 'Kostel Serhii'
 
 
-_log = logging.getLogger(__name__)
+_log = logging.getLogger('cur.daemon')
 
 
 class CurrencyUpdateDaemon:
@@ -87,8 +87,8 @@ class CurrencyUpdateDaemon:
     async def _daemon_loop(self):
         """ Infinite update currency loop """
         while not self._closing:
-            await asyncio.sleep(self._get_next_update_timeout_sec())
             try:
+                await asyncio.sleep(self._get_next_update_timeout_sec())
                 await self._update_currency()
             except Exception as err:
                 _log.exception('Unexpected error while currency updating: %r', err)

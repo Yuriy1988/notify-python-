@@ -8,7 +8,7 @@ __author__ = 'Kostel Serhii'
 
 _MAX_UPDATE_ATTEMPTS = 5
 
-_log = logging.getLogger(__name__)
+_log = logging.getLogger('mq.handler')
 
 
 async def _update_transaction_retry(pay_id, url, method, body):
@@ -23,7 +23,7 @@ async def _update_transaction_retry(pay_id, url, method, body):
 
         result = await utils.http_request(url=url, method=method, body=body)
         if result is not None:
-            _log.info('Payment %s status updated successfully with: [%r]', pay_id, body)
+            _log.info('Payment %s updated successfully with: [%r]', pay_id, body)
             return
 
         _log.error('Error update payment %s status! %s Retry after timeout...', pay_id, attempt_msg)
@@ -53,7 +53,7 @@ async def transaction_queue_handler(message):
         asyncio.ensure_future(_update_transaction_retry(pay_id, **request_kwargs))
         return
 
-    _log.info('Payment %s status updated successfully with status: %s', pay_id, pay_status)
+    _log.info('Payment %s updated successfully with status: %s', pay_id, pay_status)
 
 
 async def email_queue_handler(message):

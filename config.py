@@ -1,3 +1,5 @@
+import logging
+
 _default = dict(
     PORT=7461,
 
@@ -17,7 +19,7 @@ _default = dict(
     # TODO: add request to the admin service to get admin user email
     ADMIN_EMAIL="serhii.kostel@digitaloutlooks.com",
 
-    LOG_FORMAT='[NOTIFY][%(levelname)s][%(name)s]|%(asctime)s| %(message)s'
+    LOG_FORMAT='NOTIFY | %(levelname)-6.6s | %(name)-10.10s | %(asctime)s | %(message)s',
 )
 
 _debug = dict(
@@ -56,10 +58,13 @@ class _Config(dict):
     """
     Load settings lazily.
     """
+    def _update_log_config(self):
+        logging.basicConfig(format=config['LOG_FORMAT'], datefmt='%d.%m %H:%M:%S', level=config['LOG_LEVEL'])
 
     def _load(self, loaded_config):
         for key, val in loaded_config.items():
             self[key] = val
+        self._update_log_config()
 
     def load_debug_config(self):
         self._load(_debug)
