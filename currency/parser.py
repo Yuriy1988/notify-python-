@@ -31,7 +31,7 @@ async def _get_page(url):
     """
     Load html page async.
     :param url: page url
-    :return: page html content or None on error
+    :return: tuple (page html content, error message)
     """
     _log.debug('Load page url: %s', url)
     try:
@@ -42,14 +42,16 @@ async def _get_page(url):
                     resp_body = await response.text()
 
     except (TimeoutError, ClientError) as err:
-        _log.critical('HTTP Page Loader request error: %r', err)
-        return None
+        err_msg = 'HTTP Page Loader request error: %r' % err
+        _log.critical(err_msg)
+        return None, err_msg
 
     if rest_status != 200:
-        _log.error('HTTP Page Loader wrong status %d', rest_status)
-        return None
+        err_msg = 'HTTP Page Loader wrong status %d' % rest_status
+        _log.error(err_msg)
+        return None, err_msg
 
-    return resp_body
+    return resp_body, None
 
 
 async def _parse_currency_from_alpha_bank():
@@ -68,10 +70,10 @@ async def _parse_currency_from_alpha_bank():
 
     _log.debug('Load and parse currency from Alpha bank html page')
 
-    page_html = await _get_page(url)
-    if page_html is None:
+    page_html, error = await _get_page(url)
+    if error:
         _log.error('Error loading page for Alpha Bank parser. Skip Parsing!')
-        raise CurrencyLoadError('Error loading page for Alpha Bank (%s)' % url)
+        raise CurrencyLoadError('Error loading page for Alpha Bank [url=%s]\n\t%s' % (url, error))
 
     try:
         page_soup = BeautifulSoup(page_html, "html.parser")
@@ -127,10 +129,10 @@ async def _parse_currency_from_privat_bank():
 
     _log.debug('Load and parse currency from Privat bank html page')
 
-    page_html = await _get_page(url)
-    if not page_html:
+    page_html, error = await _get_page(url)
+    if error:
         _log.error('Error load page for Privat Bank parser. Skip Parsing!')
-        raise CurrencyLoadError('Error loading page for Privat Bank (%s)' % url)
+        raise CurrencyLoadError('Error loading page for Privat Bank (url=%s)\n\t%s' % (url, error))
 
     try:
         page_soup = BeautifulSoup(page_html, "html.parser")
@@ -177,8 +179,7 @@ async def parse_currency():
     """
     parsers = (_parse_currency_from_alpha_bank, _parse_currency_from_privat_bank)
     parse_res = await asyncio.gather(*[parse_func() for parse_func in parsers])
-    return list(itertools.chain(parse_res)) if all(parse_res) else []
-
+    return list(itertools.chain(*parse_res)) if all(parse_res) else []
 
 
 # TODO: need research. Which exchange rate are exactly needed.

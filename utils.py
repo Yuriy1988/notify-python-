@@ -80,10 +80,6 @@ async def send_sms(phone, text):
     await loop.run_in_executor(_sms_executor, _send_sms_sync, phone, text)
 
 
-def get_client_base_url():
-    return '{host}/api/client/{version}'.format(host=config['CLIENT_HOST'], version=config['CLIENT_API_VERSION'])
-
-
 async def http_request(url, method='GET', body=None, params=None):
     """
     Create async http request to the REST API.
@@ -92,7 +88,7 @@ async def http_request(url, method='GET', body=None, params=None):
     :param method: one of: GET, PUT, POST, DELETE
     :param body: dict with request body for PUT or POST
     :param params: dict with request url arguments
-    :return: response body dict if status 200 OK or None on error
+    :return: tuple (response body dict, error message)
     """
     data = json.dumps(body)
     headers = {'Content-Type': 'application/json'}
@@ -105,14 +101,17 @@ async def http_request(url, method='GET', body=None, params=None):
                     resp_body = await response.json()
 
     except (JSONDecodeError, TypeError) as err:
-        _log.error('HTTP bad response error: %r', err)
-        return None
+        err_msg = 'HTTP bad response error: %r' % err
+        _log.error(err_msg)
+        return None, err_msg
     except (TimeoutError, ClientError) as err:
-        _log.critical('HTTP request error: %r', err)
-        return None
+        err_msg = 'HTTP request error: %r' % err
+        _log.critical(err_msg)
+        return None, err_msg
 
     if rest_status != 200:
-        _log.error('HTTP wrong status %d. Error detail: %r', rest_status, resp_body.get('error'))
-        return None
+        err_msg = 'HTTP wrong status %d. Error detail: %r' % (rest_status, resp_body)
+        _log.error(err_msg)
+        return None, err_msg
 
-    return resp_body
+    return resp_body, None

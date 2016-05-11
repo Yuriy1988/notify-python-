@@ -18,6 +18,7 @@ def shutdown(loop, queue_connect, currency_daemon):
 
     :param loop: current loop
     :param queue_connect: connection to the RabbitMQ
+    :param currency_daemon: currency update scheduler
     """
     log = logging.getLogger('shutdown')
 

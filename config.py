@@ -30,6 +30,9 @@ _debug = dict(
     CLIENT_HOST='http://127.0.0.1:7254',
     CLIENT_API_VERSION='dev',
 
+    ADMIN_HOST='http://127.0.0.1:7128',
+    ADMIN_API_VERSION='dev',
+
     MAIL_SERVER="smtp.gmail.com",
     MAIL_USERNAME="daniel.omelchenko@digitaloutlooks.com",
     MAIL_PASSWORD="Po03yeFGd54c9jHq",
@@ -44,6 +47,9 @@ _production = dict(
 
     CLIENT_HOST='https://xopay.digitaloutlooks.com',
     CLIENT_API_VERSION='dev',
+
+    ADMIN_HOST='https://xopay.digitaloutlooks.com',
+    ADMIN_API_VERSION='dev',
 
     # TODO: change production settings
     MAIL_SERVER="smtp.gmail.com",
@@ -71,5 +77,11 @@ class _Config(dict):
 
     def load_production_config(self):
         self._load(_production)
+
+    def get_client_base_url(self):
+        return '{CLIENT_HOST}/api/client/{CLIENT_API_VERSION}'.format(**self)
+
+    def get_admin_base_url(self):
+        return '{ADMIN_HOST}/api/admin/{ADMIN_API_VERSION}'.format(**self)
 
 config = _Config(_default)

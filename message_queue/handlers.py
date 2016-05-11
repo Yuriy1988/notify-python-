@@ -1,7 +1,10 @@
+import pytz
 import logging
 import asyncio
+from datetime import datetime
 
 import utils
+from config import config
 
 __author__ = 'Kostel Serhii'
 
@@ -11,8 +14,16 @@ _MAX_UPDATE_ATTEMPTS = 5
 _log = logging.getLogger('mq.handler')
 
 
+async def _report_error(pay_id, error):
+    text = 'Failed to update payment [{pay_id}] status!\n\n'\
+           'Problem description:\n{error}\n\nCommit time (UTC): {timestamp}'
+    text = text.format(pay_id=pay_id, error=error, timestamp=datetime.now(tz=pytz.utc))
+    await utils.send_email(email_to=config['ADMIN_EMAIL'], subject="XOPAY: Transaction update error.", text=text)
+
+
 async def _update_transaction_retry(pay_id, url, method, body):
     """ Retry transaction update """
+    errors = []
 
     for attempt in range(_MAX_UPDATE_ATTEMPTS):
 
@@ -21,14 +32,17 @@ async def _update_transaction_retry(pay_id, url, method, body):
         attempt_msg = '(attempt: %d/%d)' % (attempt + 1, _MAX_UPDATE_ATTEMPTS)
         _log.info('Update payment %s with: [%r] %s', pay_id, body, attempt_msg)
 
-        result = await utils.http_request(url=url, method=method, body=body)
-        if result is not None:
+        result, error = await utils.http_request(url=url, method=method, body=body)
+        if result:
             _log.info('Payment %s updated successfully with: [%r]', pay_id, body)
             return
 
+        errors.append(error)
         _log.error('Error update payment %s status! %s Retry after timeout...', pay_id, attempt_msg)
 
     _log.critical('ERROR! Payment %s NOT UPDATED!!!', pay_id)
+    err_msg = 'Payment NOT UPDATED after %d attempts. \n\nAll errors: \n%s\n'
+    asyncio.ensure_future(_report_error(pay_id, err_msg % (_MAX_UPDATE_ATTEMPTS, '\n'.join(errors))))
 
 
 async def transaction_queue_handler(message):
@@ -43,13 +57,14 @@ async def transaction_queue_handler(message):
         _log.error('Missing required fields in transaction queue message [%r]. Skip notify!', message)
         return
 
-    url = utils.get_client_base_url() + '/payment/%s' % pay_id
+    url = config.get_client_base_url() + '/payment/%s' % pay_id
     request_kwargs = dict(url=url, method='PUT', body={'status': pay_status})
 
-    result = await utils.http_request(**request_kwargs)
+    result, error = await utils.http_request(**request_kwargs)
 
-    if result is None:
+    if error:
         _log.error('Error update payment %s status! Try again later in the background...', pay_id)
+        asyncio.ensure_future(_report_error(pay_id, error))
         asyncio.ensure_future(_update_transaction_retry(pay_id, **request_kwargs))
         return
 

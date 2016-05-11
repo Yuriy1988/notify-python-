@@ -43,17 +43,17 @@ class CurrencyUpdateDaemon:
         try:
             currency = await parse_currency()
         except CurrencyError as err:
-            _log.error('Error load currency: %r', err)
-            asyncio.ensure_future(self._report_error(err))
+            _log.error('Error load currency')
+            asyncio.ensure_future(self._report_error('Error load currency:\n%r' % err))
             return
 
-        url = utils.get_client_base_url() + '/currency/update'
-        result = await utils.http_request(url, method='POST', body={'update': currency})
+        url = config.get_admin_base_url() + '/currency/update'
+        result, error = await utils.http_request(url, method='POST', body={'update': currency})
 
-        if result is None:
-            err = 'Wrong response from Admin Service.'
-            _log.error('Error update currency: %r', err)
-            asyncio.ensure_future(self._report_error(err))
+        if error:
+            _log.error('Error update currency')
+            err_msg = 'Error update currency.\nWrong response from Admin Service.\n%s' % error
+            asyncio.ensure_future(self._report_error(err_msg))
             return
 
         _log.info('Currency exchange information updated successfully')
@@ -70,7 +70,7 @@ class CurrencyUpdateDaemon:
         await self._report(text.format(rates="\n".join(map(formatted, currency)), timestamp=timestamp))
 
     async def _report_error(self, error):
-        text = 'Failed to upgrade the exchange rate!\n\nProblem description: {error}\n\nCommit time (UTC): {timestamp}'
+        text = 'Failed to upgrade the exchange rate!\n\nProblem description:\n{error}\n\nCommit time (UTC): {timestamp}'
         timestamp = datetime.now(tz=pytz.timezone(self._timezone))
         await self._report(text.format(error=error, timestamp=timestamp))
 
@@ -82,7 +82,7 @@ class CurrencyUpdateDaemon:
         update_time = (day_offset + timedelta(days=d, hours=h) for d in (0, 1) for h in self._update_hours)
         nearest = min((ut for ut in update_time if ut > timedelta(0)))
 
-        return nearest.total_seconds()
+        return round(nearest.total_seconds())
 
     async def _daemon_loop(self):
         """ Infinite update currency loop """
