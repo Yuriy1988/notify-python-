@@ -181,7 +181,7 @@ if __name__ == '__main__':
     loop = asyncio.get_event_loop()
 
     queue_daemon = QueueListener(queue_handlers=[
-        (config['QUEUE_TRANSACTION'], on_message)])
+        (config['QUEUE_TRANS_STATUS'], on_message)])
 
     asyncio.ensure_future(queue_daemon.connect())
 

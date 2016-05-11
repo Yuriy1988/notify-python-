@@ -56,7 +56,7 @@ def main():
     loop = asyncio.get_event_loop()
 
     queue_connect = QueueListener(queue_handlers=[
-        (config['QUEUE_TRANSACTION'], message_queue.handlers.transaction_queue_handler),
+        (config['QUEUE_TRANS_STATUS'], message_queue.handlers.transaction_queue_handler),
         (config['QUEUE_EMAIL'], message_queue.handlers.email_queue_handler),
         (config['QUEUE_SMS'], message_queue.handlers.sms_queue_handler),
     ])

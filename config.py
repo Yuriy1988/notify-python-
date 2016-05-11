@@ -7,7 +7,7 @@ _default = dict(
     QUEUE_PASSWORD='5lf01xiOFwyMLvQrkzz7',
     QUEUE_VIRTUAL_HOST='/xopay',
 
-    QUEUE_TRANSACTION='transactions_status',
+    QUEUE_TRANS_STATUS='transactions_status',
     QUEUE_EMAIL='notify_email',
     QUEUE_SMS='notify_sms',
 
