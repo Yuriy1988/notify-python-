@@ -14,17 +14,15 @@ hosts = dict(
 path_to_deploy = [
     'currency',
     'message_queue',
-    'app.py',
-    'config.py',
-    'utils.py',
+    '*.py',
     'requirements.txt',
     'Makefile',
 ]
 
 path_to_exclude = [
     '*.pyc',
-    '.gitignore',
     '__pycache__',
+    'fabfile.py'
 ]
 
 env.deploy_dir = '/var/www/xopay/notify'
