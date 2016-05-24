@@ -9,6 +9,7 @@ from asyncio import TimeoutError
 from aiohttp.errors import ClientError
 from json.decoder import JSONDecodeError
 
+import auth
 from config import config
 
 __author__ = 'Kostel Serhii'
@@ -91,7 +92,10 @@ async def http_request(url, method='GET', body=None, params=None):
     :return: tuple (response body dict, error message)
     """
     data = json.dumps(body)
-    headers = {'Content-Type': 'application/json'}
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer %s' % auth.get_system_token()
+    }
 
     try:
         with aiohttp.ClientSession() as session:

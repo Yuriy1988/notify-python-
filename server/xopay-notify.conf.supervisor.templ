@@ -1,7 +1,7 @@
 [program:xopay-notify]
-command = /var/www/xopay/notify/venv/bin/python /var/www/xopay/notify/app.py
-directory = /var/www/xopay/notify
-user = {user}
+command=/var/www/xopay/notify/venv/bin/python /var/www/xopay/notify/app.py
+directory=/var/www/xopay/notify
+user={user}
 autostart=true
 autorestart=true
 redirect_stderr=true

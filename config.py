@@ -1,4 +1,5 @@
 import logging
+from datetime import timedelta
 
 _default = dict(
     PORT=7461,
@@ -15,6 +16,11 @@ _default = dict(
 
     CURRENCY_UPDATE_HOURS=(0, 6, 12, 18),
     CURRENCY_TIMEZONE='Europe/Riga',
+
+    AUTH_ALGORITHM='HS512',
+    AUTH_KEY='PzYs2qLh}2$8uUJbBnWB800iYKe5xdYqItRNo7@38yW@tPDVAX}EV5V31*ZK78QS',
+    AUTH_TOKEN_LIFE_TIME=timedelta(minutes=30),
+    AUTH_SYSTEM_USER_ID='xopay.notify',
 
     # TODO: add request to the admin service to get admin user email
     ADMIN_EMAIL="serhii.kostel@digitaloutlooks.com",

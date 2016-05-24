@@ -2,3 +2,4 @@ pytz
 beautifulsoup4==4.4.1
 aiohttp==0.21.6
 aioamqp==0.7.0
+pyjwt==1.4.0
