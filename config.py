@@ -55,7 +55,7 @@ _production = dict(
     LOG_ROOT_LEVEL='INFO',
     LOG_LEVEL='INFO',
 
-    LOG_FILENAME='/var/log/xopay/xopay.log',
+    LOG_FILE='/var/log/xopay/xopay.log',
     LOG_MAX_BYTES=10*1024*1024,
     LOG_BACKUP_COUNT=10,
 
