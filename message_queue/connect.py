@@ -9,7 +9,7 @@ from config import config
 __author__ = 'Kostel Serhii'
 
 
-_log = logging.getLogger('mq.connect')
+_log = logging.getLogger('xop.mq.connect')
 
 
 class _QueueConnect(object):

@@ -11,7 +11,7 @@ __author__ = 'Kostel Serhii'
 
 _MAX_UPDATE_ATTEMPTS = 5
 
-_log = logging.getLogger('mq.handler')
+_log = logging.getLogger('xop.mq.handler')
 
 
 async def _report_error(pay_id, error):

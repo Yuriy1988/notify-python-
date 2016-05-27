@@ -60,7 +60,7 @@ deploy:
 # ----- Run Server -----
 
 runserver:
-	./app.py --debug=True
+	./app.py --debug
 
 # ========== MacOS ==========
 

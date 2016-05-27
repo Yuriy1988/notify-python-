@@ -1,5 +1,5 @@
-import logging
 from datetime import timedelta
+
 
 _default = dict(
     PORT=7461,
@@ -25,12 +25,15 @@ _default = dict(
     # TODO: add request to the admin service to get admin user email
     ADMIN_EMAIL="serhii.kostel@digitaloutlooks.com",
 
-    LOG_FORMAT='NOTIFY | %(levelname)-6.6s | %(name)-10.10s | %(asctime)s | %(message)s',
+    LOG_BASE_NAME='xop',
+    LOG_FORMAT='NOTIFY | %(levelname)-6.6s | %(name)-15.15s | %(asctime)s | %(message)s',
+    LOG_DATE_FORMAT='%d.%m %H:%M:%S'
 )
 
 _debug = dict(
     DEBUG=True,
 
+    LOG_ROOT_LEVEL='DEBUG',
     LOG_LEVEL='DEBUG',
 
     CLIENT_HOST='http://127.0.0.1:7254',
@@ -49,7 +52,12 @@ _debug = dict(
 _production = dict(
     DEBUG=False,
 
+    LOG_ROOT_LEVEL='INFO',
     LOG_LEVEL='INFO',
+
+    LOG_FILENAME='/var/log/xopay/xopay.log',
+    LOG_MAX_BYTES=10*1024*1024,
+    LOG_BACKUP_COUNT=10,
 
     CLIENT_HOST='https://xopay.digitaloutlooks.com',
     CLIENT_API_VERSION='dev',
@@ -70,13 +78,9 @@ class _Config(dict):
     """
     Load settings lazily.
     """
-    def _update_log_config(self):
-        logging.basicConfig(format=config['LOG_FORMAT'], datefmt='%d.%m %H:%M:%S', level=config['LOG_LEVEL'])
-
     def _load(self, loaded_config):
         for key, val in loaded_config.items():
             self[key] = val
-        self._update_log_config()
 
     def load_debug_config(self):
         self._load(_debug)

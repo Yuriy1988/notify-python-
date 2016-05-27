@@ -9,7 +9,7 @@ from bs4 import BeautifulSoup, CData
 __author__ = 'Kostel Serhii'
 
 
-_log = logging.getLogger('cur.parser')
+_log = logging.getLogger('xop.currency.ps')
 
 # Currency rate precision
 getcontext().prec = 6
