@@ -22,9 +22,6 @@ _default = dict(
     AUTH_TOKEN_LIFE_TIME=timedelta(minutes=30),
     AUTH_SYSTEM_USER_ID='xopay.notify',
 
-    # TODO: add request to the admin service to get admin user email
-    ADMIN_EMAIL="serhii.kostel@digitaloutlooks.com",
-
     LOG_BASE_NAME='xop',
     LOG_FORMAT='NOTIFY | %(levelname)-6.6s | %(name)-15.15s | %(asctime)s | %(message)s',
     LOG_DATE_FORMAT='%d.%m %H:%M:%S'

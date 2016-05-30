@@ -119,3 +119,21 @@ async def http_request(url, method='GET', body=None, params=None):
         return None, err_msg
 
     return resp_body, None
+
+
+async def get_admins_emails():
+    result, error = await http_request(config.get_admin_base_url() + '/admins_emails')
+    if error:
+        _log.critical('Error get admins emails.\nWrong response from Admin Service.\n%s' % error)
+        return
+
+    return result.get('emails')
+
+
+async def report_to_admin(subject, text):
+        admin_email_list = await get_admins_emails()
+        if not admin_email_list:
+            _log.warning('Report not send. Admin email address is missing!')
+            return
+
+        await asyncio.gather(*[send_email(email, subject=subject, text=text) for email in admin_email_list])

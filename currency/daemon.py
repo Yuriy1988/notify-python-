@@ -59,20 +59,20 @@ class CurrencyUpdateDaemon:
         _log.info('Currency exchange information updated successfully')
         asyncio.ensure_future(self._report_success(currency))
 
-    @staticmethod
-    async def _report(text):
-        await utils.send_email(email_to=config['ADMIN_EMAIL'], subject="XOPAY: Exchange rates update.", text=text)
-
     async def _report_success(self, currency):
         rates = '\n'.join('{from_currency}/{to_currency}:\t {rate}'.format(**curr) for curr in currency)
-        text = 'Exchange rates was successfully updated.\n\n{rates}\n\nCommit time (UTC): {timestamp}'
         timestamp = datetime.now(tz=pytz.timezone(self._timezone))
-        await self._report(text.format(rates=rates, timestamp=timestamp))
+        text = 'Exchange rates was successfully updated.\n\n{rates}\n\nCommit time (UTC): {timestamp}'.\
+            format(rates=rates, timestamp=timestamp)
+
+        await utils.report_to_admin(subject="XOPAY: Exchange rates update.", text=text)
 
     async def _report_error(self, error):
-        text = 'Failed to upgrade the exchange rate!\n\nProblem description:\n{error}\n\nCommit time (UTC): {timestamp}'
         timestamp = datetime.now(tz=pytz.timezone(self._timezone))
-        await self._report(text.format(error=error, timestamp=timestamp))
+        text = 'Failed to upgrade the exchange rate!\n\nProblem description:\n{error}\n\nCommit time (UTC): {timestamp}'.\
+            format(timestamp=timestamp)
+
+        await utils.report_to_admin(subject="XOPAY: Exchange rates update.", text=text)
 
     def _get_next_update_timeout_sec(self):
         """ Return the number of seconds till next update time """

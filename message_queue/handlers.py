@@ -18,7 +18,7 @@ async def _report_error(pay_id, error):
     text = 'Failed to update payment [{pay_id}] status!\n\n'\
            'Problem description:\n{error}\n\nCommit time (UTC): {timestamp}'
     text = text.format(pay_id=pay_id, error=error, timestamp=datetime.now(tz=pytz.utc))
-    await utils.send_email(email_to=config['ADMIN_EMAIL'], subject="XOPAY: Transaction update error.", text=text)
+    await utils.report_to_admin(subject="XOPAY: Transaction update error.", text=text)
 
 
 async def _update_transaction_retry(pay_id, url, method, body):
