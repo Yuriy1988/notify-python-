@@ -98,8 +98,9 @@ class _Config(dict):
     """
     def __init__(self, *args, **kwargs):
         super(_Config, self).__init__(*args, **kwargs)
+        self._load_config_from_args()
 
-    def _config_args(self):
+    def _load_config_from_args(self):
         parser = argparse.ArgumentParser(description='XOPay Notify Service.', allow_abbrev=False)
         parser.add_argument('--debug', action='store_true', default=False, help='run in debug mode')
 
