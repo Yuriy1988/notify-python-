@@ -81,11 +81,14 @@ def main():
 
     loop = asyncio.get_event_loop()
 
-    queue_connect = QueueListener(queue_handlers=[
-        (config['QUEUE_TRANS_STATUS'], message_queue.handlers.transaction_queue_handler),
-        (config['QUEUE_EMAIL'], message_queue.handlers.email_queue_handler),
-        (config['QUEUE_SMS'], message_queue.handlers.sms_queue_handler),
-    ])
+    queue_connect = QueueListener(
+        queue_handlers=[
+            (config['QUEUE_TRANS_STATUS'], message_queue.handlers.transaction_queue_handler),
+            (config['QUEUE_EMAIL'], message_queue.handlers.email_queue_handler),
+            (config['QUEUE_SMS'], message_queue.handlers.sms_queue_handler),
+        ],
+        connect_parameters=config
+    )
     asyncio.ensure_future(queue_connect.connect())
 
     currency_daemon = CurrencyUpdateDaemon(config['CURRENCY_UPDATE_HOURS'], config['CURRENCY_TIMEZONE'])

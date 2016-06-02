@@ -23,7 +23,7 @@ _default = dict(
     AUTH_SYSTEM_USER_ID='xopay.notify',
 
     LOG_BASE_NAME='xop',
-    LOG_FORMAT='NOTIFY | %(levelname)-6.6s | %(name)-15.15s | %(asctime)s | %(message)s',
+    LOG_FORMAT=' %(levelname)-6.6s | NOTIFY | %(name)-15.15s | %(asctime)s | %(message)s',
     LOG_DATE_FORMAT='%d.%m %H:%M:%S'
 )
 
@@ -33,11 +33,8 @@ _debug = dict(
     LOG_ROOT_LEVEL='DEBUG',
     LOG_LEVEL='DEBUG',
 
-    CLIENT_HOST='http://127.0.0.1:7254',
-    CLIENT_API_VERSION='dev',
-
-    ADMIN_HOST='http://127.0.0.1:7128',
-    ADMIN_API_VERSION='dev',
+    CLIENT_BASE_URL='http://127.0.0.1:7254/api/client/dev',
+    ADMIN_BASE_URL='http://127.0.0.1:7254/api/admin/dev',
 
     MAIL_SERVER="smtp.gmail.com",
     MAIL_USERNAME="daniel.omelchenko@digitaloutlooks.com",
@@ -56,11 +53,8 @@ _production = dict(
     LOG_MAX_BYTES=10*1024*1024,
     LOG_BACKUP_COUNT=10,
 
-    CLIENT_HOST='https://xopay.digitaloutlooks.com',
-    CLIENT_API_VERSION='dev',
-
-    ADMIN_HOST='https://xopay.digitaloutlooks.com',
-    ADMIN_API_VERSION='dev',
+    CLIENT_BASE_URL='https://xopay.digitaloutlooks.com/api/client/dev',
+    ADMIN_BASE_URL='https://xopay.digitaloutlooks.com/api/admin/dev',
 
     # TODO: change production settings
     MAIL_SERVER="smtp.gmail.com",
@@ -76,19 +70,12 @@ class _Config(dict):
     Load settings lazily.
     """
     def _load(self, loaded_config):
-        for key, val in loaded_config.items():
-            self[key] = val
+        self.update(loaded_config)
 
     def load_debug_config(self):
         self._load(_debug)
 
     def load_production_config(self):
         self._load(_production)
-
-    def get_client_base_url(self):
-        return '{CLIENT_HOST}/api/client/{CLIENT_API_VERSION}'.format(**self)
-
-    def get_admin_base_url(self):
-        return '{ADMIN_HOST}/api/admin/{ADMIN_API_VERSION}'.format(**self)
 
 config = _Config(_default)

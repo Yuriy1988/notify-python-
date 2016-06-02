@@ -57,7 +57,7 @@ async def transaction_queue_handler(message):
         _log.error('Missing required fields in transaction queue message [%r]. Skip notify!', message)
         return
 
-    url = config.get_client_base_url() + '/payment/%s' % pay_id
+    url = config.get('CLIENT_BASE_URL') + '/payment/%s' % pay_id
     request_kwargs = dict(url=url, method='PUT', body={'status': pay_status})
 
     result, error = await utils.http_request(**request_kwargs)

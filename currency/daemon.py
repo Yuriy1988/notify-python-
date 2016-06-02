@@ -47,7 +47,7 @@ class CurrencyUpdateDaemon:
             asyncio.ensure_future(self._report_error('Error load currency:\n%r' % err))
             return
 
-        url = config.get_admin_base_url() + '/currency/update'
+        url = config.get('ADMIN_BASE_URL') + '/currency/update'
         result, error = await utils.http_request(url, method='POST', body={'update': currency})
 
         if error:

@@ -4,8 +4,6 @@ import asyncio
 import json
 from json.decoder import JSONDecodeError
 
-from config import config
-
 __author__ = 'Kostel Serhii'
 
 
@@ -21,13 +19,6 @@ class _QueueConnect(object):
     MIN_RECONNECT_TIMEOUT_SEC = 1
     MAX_RECONNECT_TIMEOUT_SEC = 300
 
-    _default_connect_params = dict(
-        host=config['QUEUE_HOST'],
-        port=config['QUEUE_PORT'],
-        login=config['QUEUE_USERNAME'],
-        password=config['QUEUE_PASSWORD'],
-        virtualhost=config['QUEUE_VIRTUAL_HOST']
-    )
     _default_declare_params= dict(
         passive=False,
         durable=True,
@@ -39,9 +30,10 @@ class _QueueConnect(object):
     def __init__(self, connect_parameters=None):
         """
         Create RabbitMQ Async Queue Connection
-        :param dict connect_parameters: dict with keys: host, port, login, password, virtualhost
+        :param dict connect_parameters: dict with keys:
+            QUEUE_HOST, QUEUE_PORT, QUEUE_USERNAME, QUEUE_PASSWORD, QUEUE_VIRTUAL_HOST
         """
-        self._connect_params = connect_parameters or self._default_connect_params
+        self._connect_params = connect_parameters
 
         self._waiter = asyncio.Event()
         self._transport = None
@@ -51,19 +43,30 @@ class _QueueConnect(object):
 
         self._reconnect_timeout_sec = self.MIN_RECONNECT_TIMEOUT_SEC
 
+    def _get_connect_parameters(self):
+        """Map connect parameters to aioamqp connect arguments."""
+        return dict(
+            host=self._connect_params['QUEUE_HOST'],
+            port=self._connect_params['QUEUE_PORT'],
+            login=self._connect_params['QUEUE_USERNAME'],
+            password=self._connect_params['QUEUE_PASSWORD'],
+            virtualhost=self._connect_params['QUEUE_VIRTUAL_HOST']
+        )
+
     async def connect(self):
         """
         Create async connection to the RabbitMQ, chanel and queue.
         Start unfinished loop.
         Try to reconnect after connection error.
         """
+        connect_params = self._get_connect_parameters()
 
         while not self._closing:
 
             await asyncio.sleep(self._get_reconnect_timeout())
 
             try:
-                self._transport, self._protocol = await aioamqp.connect(**self._connect_params)
+                self._transport, self._protocol = await aioamqp.connect(**connect_params)
             except aioamqp.AioamqpException as err:
                 _log.error("Queue connection error: %r \nReconnecting...", err)
                 continue
@@ -174,6 +177,8 @@ class QueueListener(_QueueConnect):
 
 if __name__ == '__main__':
 
+    from config import config
+
     logging.basicConfig(format=config['LOG_FORMAT'], datefmt='%Y-%m-%d %H:%M:%S', level='DEBUG')
 
     async def on_message(body):
@@ -182,7 +187,7 @@ if __name__ == '__main__':
     loop = asyncio.get_event_loop()
 
     queue_daemon = QueueListener(queue_handlers=[
-        (config['QUEUE_TRANS_STATUS'], on_message)])
+        (config['QUEUE_TRANS_STATUS'], on_message)], connect_parameters=config)
 
     asyncio.ensure_future(queue_daemon.connect())
 
