@@ -1,3 +1,7 @@
+import os
+import argparse
+import logging
+import logging.handlers
 from datetime import timedelta
 
 
@@ -65,12 +69,49 @@ _production = dict(
 )
 
 
+def logger_configure(log_config):
+
+    if 'LOG_FILE' in log_config and os.access(os.path.dirname(log_config['LOG_FILE']), os.W_OK):
+        log_handler = logging.handlers.RotatingFileHandler(
+            filename=log_config['LOG_FILE'],
+            maxBytes=log_config['LOG_MAX_BYTES'],
+            backupCount=log_config['LOG_BACKUP_COUNT'],
+            encoding='utf8',
+        )
+    else:
+        log_handler = logging.StreamHandler()
+
+    log_formatter = logging.Formatter(fmt=log_config['LOG_FORMAT'], datefmt=log_config['LOG_DATE_FORMAT'])
+    log_handler.setFormatter(log_formatter)
+
+    # root logger
+    logging.getLogger('').addHandler(log_handler)
+    logging.getLogger('').setLevel(log_config['LOG_ROOT_LEVEL'])
+
+    # local logger
+    logging.getLogger(log_config.get('LOG_BASE_NAME', '')).setLevel(log_config['LOG_LEVEL'])
+
+
 class _Config(dict):
     """
     Load settings lazily.
     """
+    def __init__(self, *args, **kwargs):
+        super(_Config, self).__init__(*args, **kwargs)
+
+    def _config_args(self):
+        parser = argparse.ArgumentParser(description='XOPay Notify Service.', allow_abbrev=False)
+        parser.add_argument('--debug', action='store_true', default=False, help='run in debug mode')
+
+        args = parser.parse_args()
+        if args.debug:
+            self.load_debug_config()
+        else:
+            self.load_production_config()
+
     def _load(self, loaded_config):
         self.update(loaded_config)
+        logger_configure(self)
 
     def load_debug_config(self):
         self._load(_debug)
