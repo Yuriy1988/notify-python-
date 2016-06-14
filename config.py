@@ -17,6 +17,7 @@ _default = dict(
     QUEUE_TRANS_STATUS='transactions_status',
     QUEUE_EMAIL='notify_email',
     QUEUE_SMS='notify_sms',
+    QUEUE_REQUEST='notify_request',
 
     CURRENCY_UPDATE_HOURS=(0, 6, 12, 18),
     CURRENCY_TIMEZONE='Europe/Riga',

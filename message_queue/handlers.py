@@ -49,7 +49,6 @@ async def transaction_queue_handler(message):
     """
     Transaction status queue handler.
     Retry update on error.
-
     :param message: json dict with information from queue
     """
     pay_id, pay_status = message.get('id'), message.get('status')
@@ -94,3 +93,10 @@ async def sms_queue_handler(message):
 
     await utils.send_sms(**message)
 
+
+async def request_queue_handler(message):
+    """
+    Requests queue handler.
+    :param message: json dict with information from queue
+    """
+    _log.debug('Get request: %s', message)

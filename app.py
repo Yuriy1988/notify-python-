@@ -50,6 +50,7 @@ def main():
             (config['QUEUE_TRANS_STATUS'], message_queue.handlers.transaction_queue_handler),
             (config['QUEUE_EMAIL'], message_queue.handlers.email_queue_handler),
             (config['QUEUE_SMS'], message_queue.handlers.sms_queue_handler),
+            (config['QUEUE_REQUEST'], message_queue.handlers.request_queue_handler),
         ],
         connect_parameters=config
     )
