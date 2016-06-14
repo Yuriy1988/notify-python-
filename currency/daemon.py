@@ -70,7 +70,7 @@ class CurrencyUpdateDaemon:
     async def _report_error(self, error):
         timestamp = datetime.now(tz=pytz.timezone(self._timezone))
         text = 'Failed to upgrade the exchange rate!\n\nProblem description:\n{error}\n\nCommit time (UTC): {timestamp}'.\
-            format(timestamp=timestamp)
+            format(error=error, timestamp=timestamp)
 
         await utils.report_to_admin(subject="XOPAY: Exchange rates update.", text=text)
 

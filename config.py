@@ -39,9 +39,9 @@ _debug = dict(
     LOG_LEVEL='DEBUG',
 
     CLIENT_BASE_URL='http://127.0.0.1:7254/api/client/dev',
-    ADMIN_BASE_URL='http://127.0.0.1:7254/api/admin/dev',
+    ADMIN_BASE_URL='http://127.0.0.1:7128/api/admin/dev',
 
-    MAIL_SERVER="smtp.gmail.com",
+    MAIL_SERVER="smtp.gmail.com:587",
     MAIL_USERNAME="daniel.omelchenko@digitaloutlooks.com",
     MAIL_PASSWORD="Po03yeFGd54c9jHq",
     MAIL_DEFAULT_SENDER="daniel.omelchenko@digitaloutlooks.com",
@@ -62,7 +62,7 @@ _production = dict(
     ADMIN_BASE_URL='https://xopay.digitaloutlooks.com/api/admin/dev',
 
     # TODO: change production settings
-    MAIL_SERVER="smtp.gmail.com",
+    MAIL_SERVER="smtp.gmail.com:587",
     MAIL_USERNAME="daniel.omelchenko@digitaloutlooks.com",
     MAIL_PASSWORD="Po03yeFGd54c9jHq",
     MAIL_DEFAULT_SENDER="daniel.omelchenko@digitaloutlooks.com",

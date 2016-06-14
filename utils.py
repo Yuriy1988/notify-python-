@@ -32,13 +32,14 @@ def _send_email_sync(email_to, subject, text, email_from=None):
 
     try:
         with smtplib.SMTP(config['MAIL_SERVER']) as server:
+            server.ehlo()
             server.starttls()
             server.login(config['MAIL_USERNAME'], config['MAIL_PASSWORD'])
 
             content = "From:{}\nSubject:{}\n\n{}".format(email_from, subject, text)
             server.sendmail(email_from, email_to, content)
 
-    except smtplib.SMTPException as err:
+    except (smtplib.SMTPException, OSError) as err:
         _log.critical('Send Email Error: %r', err)
 
 
