@@ -113,12 +113,12 @@ def setup_supervisor():
     sudo('apt-get install -y supervisor')
 
     base_config_file = '/tmp/supervisord.conf'
-    create_config(base_config_file, 'server/supervisord.conf.templ')
+    create_config(base_config_file, 'DEPLOY/supervisord.conf.templ')
     put(base_config_file, '/etc/supervisor/', use_sudo=True)
     local('rm {config}'.format(config=base_config_file))
 
     config_file = '/tmp/xopay-notify.conf'
-    create_config(config_file, 'server/xopay-notify.conf.supervisor.templ')
+    create_config(config_file, 'DEPLOY/xopay-notify.conf.supervisor.templ')
 
     put(config_file, '/etc/supervisor/conf.d/', use_sudo=True)
     local('rm {config}'.format(config=config_file))
