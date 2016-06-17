@@ -92,11 +92,3 @@ async def sms_queue_handler(message):
         return
 
     await utils.send_sms(**message)
-
-
-async def request_queue_handler(message):
-    """
-    Requests queue handler.
-    :param message: json dict with information from queue
-    """
-    _log.debug('Get request: %s', message)

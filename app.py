@@ -3,8 +3,9 @@ import logging
 import asyncio
 
 from config import config
-import message_queue.handlers
+import message_queue.delivery_handlers
 from message_queue.connect import QueueListener
+from notification.processing import NotifyProcessing
 from currency.daemon import CurrencyUpdateDaemon
 
 __author__ = 'Kostel Serhii'
@@ -45,12 +46,14 @@ def main():
 
     loop = asyncio.get_event_loop()
 
+    notify_processor = NotifyProcessing()
+
     queue_connect = QueueListener(
         queue_handlers=[
-            (config['QUEUE_TRANS_STATUS'], message_queue.handlers.transaction_queue_handler),
-            (config['QUEUE_EMAIL'], message_queue.handlers.email_queue_handler),
-            (config['QUEUE_SMS'], message_queue.handlers.sms_queue_handler),
-            (config['QUEUE_REQUEST'], message_queue.handlers.request_queue_handler),
+            (config['QUEUE_TRANS_STATUS'], message_queue.delivery_handlers.transaction_queue_handler),
+            (config['QUEUE_EMAIL'], message_queue.delivery_handlers.email_queue_handler),
+            (config['QUEUE_SMS'], message_queue.delivery_handlers.sms_queue_handler),
+            (config['QUEUE_REQUEST'], notify_processor.request_queue_handler),
         ],
         connect_parameters=config
     )
