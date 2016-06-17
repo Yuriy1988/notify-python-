@@ -92,5 +92,8 @@ class CurrencyUpdateDaemon:
                 _log.info('Next update will be after %d sec' % next_update_sec)
                 await asyncio.sleep(next_update_sec)
                 await self._update_currency()
+            except asyncio.CancelledError:
+                if not self._closing:
+                    _log.error('Currency update daemon task was cancelled')
             except Exception as err:
                 _log.exception('Unexpected error while currency updating: %r', err)

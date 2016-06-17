@@ -1,6 +1,8 @@
 #!venv/bin/python
 import logging
 import asyncio
+import motor.motor_asyncio
+from aiohttp import web
 
 from config import config
 import message_queue.delivery_handlers
@@ -11,42 +13,58 @@ from currency.daemon import CurrencyUpdateDaemon
 __author__ = 'Kostel Serhii'
 
 
-def shutdown(loop, queue_connect, currency_daemon):
+_log = logging.getLogger('xop.main')
+
+
+async def shutdown(app):
     """
-    Stop daemons and all process.
-    Wait for connection closed and stop IOLoop.
-
-    :param loop: current loop
-    :param queue_connect: connection to the RabbitMQ
-    :param currency_daemon: currency update scheduler
+    Close connections, stop daemons and all process.
+    :param app: web server app
     """
-    log = logging.getLogger('xop.shutdown')
+    _log.info('Stopping XOPay Notify Service...')
 
-    log.info('Stopping XOPay Notify Service...')
+    queue_connect = app.get('queue_connect')
+    if queue_connect:
+        await queue_connect.close()
 
-    loop.run_until_complete(queue_connect.close())
+    currency_daemon = app.get('currency_daemon')
+    if currency_daemon:
+        currency_daemon.stop()
 
-    currency_daemon.stop()
+    _log.info('Shutdown tasks')
+    tasks = asyncio.Task.all_tasks()
+    if tasks:
+        for task in tasks:
+            task.cancel()
+        try:
+            await asyncio.wait(tasks)
+        except Exception:
+            pass
 
-    log.info('Shutdown tasks')
-    for task in asyncio.Task.all_tasks():
-        task.cancel()
-
-    loop.close()
-    log.info('XOPay Notify Service Stopped!')
+    _log.info('XOPay Notify Service Stopped!')
 
 
-def main():
-    """ Parse arguments, update settings and start main loop. """
+def register_handlers(app):
+    """
+    Register server handlers with urls.
+    :param app: web server app
+    """
+    # app.router.add_route('GET', '/{name}', handle)
+    pass
 
-    log = logging.getLogger('xop.main')
-    log.info('Starting XOPay Notify Service...')
-    if config['DEBUG']:
-        log.info('Debug mode is active!')
 
-    loop = asyncio.get_event_loop()
+def create_app():
+    """Create server application and all necessary services."""
+    app = web.Application()
 
-    notify_processor = NotifyProcessing()
+    register_handlers(app)
+
+    motor_client = motor.motor_asyncio.AsyncIOMotorClient()
+    db = motor_client[config['DB_NAME']]
+    app['db'] = db
+
+    notify_processor = NotifyProcessing(db=db)
+    app['notify_processor'] = notify_processor
 
     queue_connect = QueueListener(
         queue_handlers=[
@@ -57,18 +75,22 @@ def main():
         ],
         connect_parameters=config
     )
-    asyncio.ensure_future(queue_connect.connect())
+    queue_connect.start()
+    app['queue_connect'] = queue_connect
 
     currency_daemon = CurrencyUpdateDaemon(config['CURRENCY_UPDATE_HOURS'], config['CURRENCY_TIMEZONE'])
     currency_daemon.start()
+    app['currency_daemon'] = currency_daemon
 
-    try:
-        loop.run_forever()
-    except KeyboardInterrupt:
-        pass
-    finally:
-        shutdown(loop, queue_connect, currency_daemon)
+    return app
 
 
 if __name__ == "__main__":
-    main()
+
+    _log.info('Starting XOPay Notify Service...')
+    if config['DEBUG']:
+        _log.info('Debug mode is active!')
+
+    web_app = create_app()
+    web_app.on_shutdown.append(shutdown)
+    web.run_app(web_app, host='127.0.0.1', port=config['PORT'])

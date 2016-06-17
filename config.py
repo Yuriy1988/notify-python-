@@ -6,7 +6,9 @@ from datetime import timedelta
 
 
 _default = dict(
-    PORT=7461,
+    PORT=7515,
+
+    DB_NAME='xopay_notify_db',
 
     QUEUE_HOST='127.0.0.1',
     QUEUE_PORT=5672,
@@ -121,4 +123,5 @@ class _Config(dict):
     def load_production_config(self):
         self._load(_production)
 
+# FIXME: bad solution. Make better!!!
 config = _Config(_default)

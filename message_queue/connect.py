@@ -174,6 +174,10 @@ class QueueListener(_QueueConnect):
 
         return _on_message
 
+    def start(self):
+        _log.info('Start queue listener')
+        asyncio.ensure_future(self.connect())
+
 
 if __name__ == '__main__':
 
