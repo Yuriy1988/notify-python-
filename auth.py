@@ -80,9 +80,8 @@ def _check_authorization(request, access_groups, verify=True):
             _log.debug('Session %s expired', payload.get('session_id'))
             raise errors.UnauthorizedError('Session expired')
 
-        peer_name = request.transport.get_extra_info('peername')
-        if peer_name is not None:
-            remote_address, port = peer_name
+        remote_address = request.headers.get('X-REAL-IP')
+        if remote_address is not None:
             if ip_addr != remote_address:
                 _log.warning('Wrong IP: %s. Token created for IP: %s', remote_address, ip_addr)
                 raise errors.ForbiddenError('Request forbidden from another network')
