@@ -7,8 +7,7 @@ from aiohttp import web
 from config import config
 import message_queue.delivery_handlers
 from message_queue.connect import QueueListener
-from notification.processing import NotifyProcessing
-from notification import handlers as nh
+from notification import handlers as nh, processing as np
 from currency.daemon import CurrencyUpdateDaemon
 
 __author__ = 'Kostel Serhii'
@@ -70,7 +69,7 @@ def create_app():
     db = motor_client[config['DB_NAME']]
     app['db'] = db
 
-    notify_processor = NotifyProcessing(db=db)
+    notify_processor = np.NotifyProcessing(db=db)
     notify_processor.start()
     app['notify_processor'] = notify_processor
 
