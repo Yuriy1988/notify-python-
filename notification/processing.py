@@ -15,11 +15,11 @@ _log = logging.getLogger('xop.notify')
 
 BaseNotifyNode = namedtuple(
     'BaseNotifyNode',
-    '_id, name, case_regex, case_template, header_template, body_template, subscribers_template'
+    'id, name, case_regex, case_template, header_template, body_template, subscribers_template'
 )
 NotifyNode = namedtuple(
     'NotifyNode',
-    '_id, name, case_regex, case, header, body, subscribers'
+    'id, name, case_regex, case, header, body, subscribers'
 )
 
 email_name2url = dict(
@@ -49,7 +49,7 @@ class NotifyProcessing:
         if node in self._base_node_storage:
             self._base_node_storage.remove(node)
 
-        await self.db.notifications.remove(node._id)
+        await self.db.notifications.remove(node.id)
 
     def start(self):
         _log.info('Start notify processing')
@@ -61,17 +61,17 @@ class NotifyProcessing:
         and add to internal storage.
         """
         self._base_node_storage = set()
-        notifications = await self.db.notifications.find()
+        notifications = await self.db.notifications.find().to_list(None)
 
         for notify in notifications:
             base_node = BaseNotifyNode(
-                _id=notify._id,
-                name=notify.name,
-                case_regex=notify.case_regex,
-                case_template=notify.case_template,
-                header_template=notify.header_template,
-                body_template=notify.body_template,
-                subscribers_template=notify.subscribers_template
+                id=notify['_id'],
+                name=notify['name'],
+                case_regex=notify['case_regex'],
+                case_template=notify['case_template'],
+                header_template=notify['header_template'],
+                body_template=notify['body_template'],
+                subscribers_template=notify['subscribers_template']
             )
             self._base_node_storage.add(base_node)
 
@@ -88,7 +88,7 @@ class NotifyProcessing:
             try:
 
                 notify_node = NotifyNode(
-                    _id=base_node._id,
+                    id=base_node._id,
                     name=base_node.name,
                     case_regex=base_node.case_regex,
                     case=fill_template(base_node.case_template),
