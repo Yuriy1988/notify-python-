@@ -15,11 +15,11 @@ _log = logging.getLogger('xop.notify')
 
 BaseNotifyNode = namedtuple(
     'BaseNotifyNode',
-    'name, case_regex, case_template, header_template, body_template, subscribers_template'
+    '_id, name, case_regex, case_template, header_template, body_template, subscribers_template'
 )
 NotifyNode = namedtuple(
     'NotifyNode',
-    'name, case_regex, case, header, body, subscribers'
+    '_id, name, case_regex, case, header, body, subscribers'
 )
 
 email_name2url = dict(
@@ -39,35 +39,41 @@ class NotifyProcessing:
     _base_node_storage = set()
     _compiled_regex = dict()
 
-    def __init__(self):
-        self.load_notify_nodes()
+    def __init__(self, db):
+        self.db = db
 
-    def _remove_bad_node(self, base_node):
+    async def _remove_bad_node(self, node):
         """Remove bad node from internal storage and database."""
-        _log.warning('Remove bad notify node "%s" from storage', base_node.name)
+        _log.warning('Remove bad notify node "%s" from storage', node.name)
 
-        if base_node in self._base_node_storage:
-            self._base_node_storage.remove(base_node)
+        if node in self._base_node_storage:
+            self._base_node_storage.remove(node)
 
-        # TODO: remove from database
+        await self.db.notifications.remove(node._id)
 
-    def load_notify_nodes(self):
+    def start(self):
+        _log.info('Start notify processing')
+        asyncio.ensure_future(self.load_notify_nodes())
+
+    async def load_notify_nodes(self):
         """
         Load base notify nodes from database
         and add to internal storage.
         """
         self._base_node_storage = set()
+        notifications = await self.db.notifications.find()
 
-        # TODO: load from database
-        test_node = BaseNotifyNode(
-            name='Test',
-            case_regex='xopay-admin:.*/test/.+:200',
-            case_template='{{ service_name }}:{{ query.path }}:{{ query.status_code }}',
-            header_template='Hello {{ service_name }}',
-            body_template='It\'s alive, ALIVE!!!\n {{ query.path }}',
-            subscribers_template='eikt@ukr.net, dodge-ksv@yandex.ru, group:admin'
-        )
-        self._base_node_storage.add(test_node)
+        for notify in notifications:
+            base_node = BaseNotifyNode(
+                _id=notify._id,
+                name=notify.name,
+                case_regex=notify.case_regex,
+                case_template=notify.case_template,
+                header_template=notify.header_template,
+                body_template=notify.body_template,
+                subscribers_template=notify.subscribers_template
+            )
+            self._base_node_storage.add(base_node)
 
     def rendered_notify_nodes(self, values):
         """
@@ -82,6 +88,7 @@ class NotifyProcessing:
             try:
 
                 notify_node = NotifyNode(
+                    _id=base_node._id,
                     name=base_node.name,
                     case_regex=base_node.case_regex,
                     case=fill_template(base_node.case_template),
@@ -93,7 +100,7 @@ class NotifyProcessing:
 
             except jinja2.TemplateError as err:
                 _log.warning('Base node "%s" template render error: %s', base_node.name, err)
-                self._remove_bad_node(base_node)
+                asyncio.ensure_future(self._remove_bad_node(base_node))
 
     def matched_notify_nodes(self, nodes):
         """
@@ -116,7 +123,7 @@ class NotifyProcessing:
 
             except re.error as err:
                 _log.warning('Match node "%s" regex error: %s', node.name, err)
-                self._remove_bad_node(node)
+                asyncio.ensure_future(self._remove_bad_node(node))
 
             except ValueError as err:
                 _log.warning('Match node "%s" value error: %s', node.name, err)

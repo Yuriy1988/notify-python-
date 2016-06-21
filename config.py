@@ -8,6 +8,9 @@ from datetime import timedelta
 _default = dict(
     PORT=7515,
 
+    SERVICE_NAME='xopay-notify',
+    API_VERSION='dev',
+
     DB_NAME='xopay_notify_db',
 
     QUEUE_HOST='127.0.0.1',

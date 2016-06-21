@@ -6,3 +6,4 @@ aiohttp==0.21.6
 pyjwt==1.4.0
 motor==0.6.2
 Jinja2==2.8
+marshmallow==2.6.0

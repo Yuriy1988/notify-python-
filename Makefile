@@ -14,9 +14,15 @@ install_python35_repo:
 	sudo add-apt-repository ppa:fkrull/deadsnakes
 	sudo apt-get update
 
+install_mongodb_repo:
+	sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv EA312927
+	echo "deb http://repo.mongodb.org/apt/ubuntu trusty/mongodb-org/3.2 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb.list
+	sudo apt-get update
+
 install:
 	sudo apt-get install -y $(PYTHON) $(PYTHON)-dev python3-pip python3-wheel python-virtualenv
 	sudo apt-get install -y rabbitmq-server
+	sudo apt-get install -y mongodb-org
 
 
 # ----- Queue -----

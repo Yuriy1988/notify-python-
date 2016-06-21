@@ -8,6 +8,7 @@ from config import config
 import message_queue.delivery_handlers
 from message_queue.connect import QueueListener
 from notification.processing import NotifyProcessing
+from notification import handlers as nh
 from currency.daemon import CurrencyUpdateDaemon
 
 __author__ = 'Kostel Serhii'
@@ -49,13 +50,19 @@ def register_handlers(app):
     Register server handlers with urls.
     :param app: web server app
     """
-    # app.router.add_route('GET', '/{name}', handle)
-    pass
+    url_prefix = '/api/notify/{API_VERSION}'.format(**config)
+
+    app.router.add_route('GET', url_prefix + '/notifications', nh.notifications_list)
+    app.router.add_route('POST', url_prefix + '/notifications', nh.notification_create)
+    app.router.add_route('GET', url_prefix + '/notifications/{notify_id}', nh.notification_detail)
+    app.router.add_route('PUT', url_prefix + '/notifications/{notify_id}', nh.notification_update)
+    app.router.add_route('DELETE', url_prefix + '/notifications/{notify_id}', nh.notification_delete)
 
 
 def create_app():
     """Create server application and all necessary services."""
     app = web.Application()
+    app['config'] = config
 
     register_handlers(app)
 
@@ -64,6 +71,7 @@ def create_app():
     app['db'] = db
 
     notify_processor = NotifyProcessing(db=db)
+    notify_processor.start()
     app['notify_processor'] = notify_processor
 
     queue_connect = QueueListener(
