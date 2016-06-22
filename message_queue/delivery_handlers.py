@@ -51,13 +51,13 @@ async def transaction_queue_handler(message):
     Retry update on error.
     :param message: json dict with information from queue
     """
-    pay_id, pay_status = message.get('id'), message.get('status')
+    pay_id, pay_status, redirect_url = message.get('id'), message.get('status'), message.get('redirect_url')
     if not pay_id or not pay_status:
         _log.error('Missing required fields in transaction queue message [%r]. Skip notify!', message)
         return
 
     url = config.get('CLIENT_BASE_URL') + '/payment/%s' % pay_id
-    request_kwargs = dict(url=url, method='PUT', body={'status': pay_status})
+    request_kwargs = dict(url=url, method='PUT', body={'status': pay_status, 'redirect_url': redirect_url})
 
     result, error = await utils.http_request(**request_kwargs)
 
