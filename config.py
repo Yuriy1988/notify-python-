@@ -33,7 +33,7 @@ _default = dict(
     AUTH_SYSTEM_USER_ID='xopay.notify',
 
     LOG_BASE_NAME='xop',
-    LOG_FORMAT=' %(levelname)-6.6s | NOTIFY | %(name)-15.15s | %(asctime)s | %(message)s',
+    LOG_FORMAT='%(levelname)-6.6s | NOTIFY | %(name)-12.12s | %(asctime)s | %(message)s',
     LOG_DATE_FORMAT='%d.%m %H:%M:%S'
 )
 
