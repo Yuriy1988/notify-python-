@@ -123,7 +123,7 @@ async def http_request(url, method='GET', body=None, params=None):
 
 
 async def get_admins_emails():
-    result, error = await http_request(config.get('ADMIN_BASE_URL') + '/admins_emails')
+    result, error = await http_request(config.get('ADMIN_BASE_URL') + '/emails/groups/admin')
     if error:
         _log.critical('Error get admins emails.\nWrong response from Admin Service.\n%s' % error)
         return

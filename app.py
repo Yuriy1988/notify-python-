@@ -94,10 +94,11 @@ def create_app():
 
 if __name__ == "__main__":
 
-    _log.info('Starting XOPay Notify Service...')
-    if config['DEBUG']:
-        _log.info('Debug mode is active!')
-
     web_app = create_app()
     web_app.on_shutdown.append(shutdown)
+
+    _log.info('Starting XOPay Notify Service...')
+    if config['DEBUG']:
+        _log.warning('Debug mode is active!')
+
     web.run_app(web_app, host='127.0.0.1', port=config['PORT'])
