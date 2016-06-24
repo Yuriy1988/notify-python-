@@ -192,9 +192,13 @@ class NotifyProcessing:
 
 
 if __name__ == '__main__':
-    logging.basicConfig(datefmt='%Y-%m-%d %H:%M:%S', level='DEBUG')
+    import motor.motor_asyncio
 
-    np = NotifyProcessing()
+    logging.basicConfig(datefmt='%Y-%m-%d %H:%M:%S', level='DEBUG')
+    motor_client = motor.motor_asyncio.AsyncIOMotorClient()
+    db = motor_client['local']
+
+    np = NotifyProcessing(db=db)
     np_values = ({'service_name': 'xopay-admin', 'query': {'path': '/api/admin/dev/test/42', 'status_code': 200}})
     config['ADMIN_BASE_URL'] = 'http://127.0.0.1:7128/api/admin/dev'
     loop = asyncio.get_event_loop()

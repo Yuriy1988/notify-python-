@@ -7,7 +7,7 @@ from json.decoder import JSONDecodeError
 __author__ = 'Kostel Serhii'
 
 
-_log = logging.getLogger('xop.mq.connect')
+_log = logging.getLogger('xop.queue')
 
 
 class _QueueConnect(object):
@@ -19,7 +19,7 @@ class _QueueConnect(object):
     MIN_RECONNECT_TIMEOUT_SEC = 1
     MAX_RECONNECT_TIMEOUT_SEC = 300
 
-    _default_declare_params= dict(
+    _default_declare_params = dict(
         passive=False,
         durable=True,
         exclusive=False,
