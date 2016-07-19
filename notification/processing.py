@@ -6,7 +6,6 @@ from itertools import chain
 from collections import namedtuple
 
 import utils
-from config import config
 
 __author__ = 'Kostel Serhii'
 
@@ -39,8 +38,9 @@ class NotifyProcessing:
     _base_node_storage = set()
     _compiled_regex = dict()
 
-    def __init__(self, db):
+    def __init__(self, db, admin_base_url):
         self.db = db
+        self.admin_base_url = admin_base_url
 
     async def _remove_bad_node(self, node):
         """Remove bad node from internal storage and database."""
@@ -128,8 +128,7 @@ class NotifyProcessing:
             except ValueError as err:
                 _log.warning('Match node "%s" value error: %s', node.name, err)
 
-    @staticmethod
-    async def extract_subscriber_emails(subscribers_str):
+    async def extract_subscriber_emails(self, subscribers_str):
         """
         Parse subscribers string to get emails for notification.
         Subscribers must be separated by ",".
@@ -146,10 +145,9 @@ class NotifyProcessing:
 
         emails = set(filter(email_regex.match, subscribers))
 
-        admin_base = config['ADMIN_BASE_URL']
         request_emails = set()
         request_emails_raw_info = (addr.split(':') for addr in subscribers if email_pattern_regex.match(addr))
-        request_email_urls = [admin_base + email_name2url[name] % data for name, data in request_emails_raw_info]
+        request_email_urls = [self.admin_base_url + email_name2url[name] % data for name, data in request_emails_raw_info]
 
         if request_email_urls:
             request_email_futures, _ = await asyncio.wait(list(map(utils.http_request, request_email_urls)))
@@ -198,9 +196,8 @@ if __name__ == '__main__':
     motor_client = motor.motor_asyncio.AsyncIOMotorClient()
     db = motor_client['local']
 
-    np = NotifyProcessing(db=db)
+    np = NotifyProcessing(db=db, admin_base_url='http://127.0.0.1:7128/api/admin/dev')
     np_values = ({'service_name': 'xopay-admin', 'query': {'path': '/api/admin/dev/test/42', 'status_code': 200}})
-    config['ADMIN_BASE_URL'] = 'http://127.0.0.1:7128/api/admin/dev'
     loop = asyncio.get_event_loop()
     loop.run_until_complete(np.request_queue_handler(np_values))
     loop.close()

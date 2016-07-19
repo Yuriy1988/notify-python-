@@ -4,7 +4,6 @@ import pytz
 from datetime import datetime, timedelta
 
 import utils
-from config import config
 from currency.parser import parse_currency, CurrencyError
 
 __author__ = 'Kostel Serhii'
@@ -20,7 +19,8 @@ class CurrencyUpdateDaemon:
     Default Timezone: Europe/Riga (GMT+3)
     """
 
-    def __init__(self, update_hours=(0,), timezone='UTC'):
+    def __init__(self, admin_base_url, update_hours=(0,), timezone='UTC'):
+        self.admin_base_url = admin_base_url
         self._closing = False
         self._update_hours = update_hours
         self._timezone = timezone
@@ -47,7 +47,7 @@ class CurrencyUpdateDaemon:
             asyncio.ensure_future(self._report_error('Error load currency:\n%r' % err))
             return
 
-        url = config.get('ADMIN_BASE_URL') + '/currency/update'
+        url = self.admin_base_url + '/currency/update'
         result, error = await utils.http_request(url, method='POST', body={'update': currency})
 
         if error:

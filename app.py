@@ -69,7 +69,10 @@ def create_app():
     db = motor_client[config['DB_NAME']]
     app['db'] = db
 
-    notify_processor = np.NotifyProcessing(db=db)
+    notify_processor = np.NotifyProcessing(
+        db=db,
+        admin_base_url=config['ADMIN_BASE_URL']
+    )
     notify_processor.start()
     app['notify_processor'] = notify_processor
 
@@ -85,7 +88,11 @@ def create_app():
     queue_connect.start()
     app['queue_connect'] = queue_connect
 
-    currency_daemon = CurrencyUpdateDaemon(config['CURRENCY_UPDATE_HOURS'], config['CURRENCY_TIMEZONE'])
+    currency_daemon = CurrencyUpdateDaemon(
+        admin_base_url=config['ADMIN_BASE_URL'],
+        update_hours=config['CURRENCY_UPDATE_HOURS'],
+        timezone=config['CURRENCY_TIMEZONE']
+    )
     currency_daemon.start()
     app['currency_daemon'] = currency_daemon
 
