@@ -1,10 +1,11 @@
 #!venv/bin/python
+import argparse
 import logging
 import asyncio
 import motor.motor_asyncio
 from aiohttp import web
 
-from config import config
+from config import config, logger_configure
 import message_queue.delivery_handlers
 from message_queue.connect import QueueListener
 from notification import handlers as nh, processing as np
@@ -58,9 +59,13 @@ def register_handlers(app):
     app.router.add_route('DELETE', url_prefix + '/notifications/{notify_id}', nh.notification_delete)
 
 
-def create_app():
-    """Create server application and all necessary services."""
-    app = web.Application()
+def create_app(loop=None):
+    """
+    Create server application and all necessary services.
+    :param loop: async main loop
+    """
+
+    app = web.Application(loop=loop)
     app['config'] = config
 
     register_handlers(app)
@@ -100,6 +105,14 @@ def create_app():
 
 
 if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser(description='XOPay Notify Service.', allow_abbrev=False)
+    parser.add_argument('--config', default='debug', help='load config: [debug, production] (default "debug")')
+
+    args = parser.parse_args()
+    config.load_config(args.config)
+
+    logger_configure(config)
 
     web_app = create_app()
     web_app.on_shutdown.append(shutdown)

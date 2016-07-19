@@ -1,78 +1,77 @@
 import os
-import argparse
 import logging
 import logging.handlers
 from datetime import timedelta
 
 
-_default = dict(
-    PORT=7515,
+class _default:
 
-    SERVICE_NAME='xopay-notify',
-    API_VERSION='dev',
+    PORT = 7515
 
-    DB_NAME='xopay_notify_db',
+    SERVICE_NAME = 'xopay-notify'
+    API_VERSION = 'dev'
 
-    QUEUE_HOST='127.0.0.1',
-    QUEUE_PORT=5672,
-    QUEUE_USERNAME='xopay_rabbit',
-    QUEUE_PASSWORD='5lf01xiOFwyMLvQrkzz7',
-    QUEUE_VIRTUAL_HOST='/xopay',
+    DB_NAME = 'xopay_notify_db'
 
-    QUEUE_TRANS_STATUS='transactions_status',
-    QUEUE_EMAIL='notify_email',
-    QUEUE_SMS='notify_sms',
-    QUEUE_REQUEST='notify_request',
+    QUEUE_HOST = '127.0.0.1'
+    QUEUE_PORT = 5672
+    QUEUE_USERNAME = 'xopay_rabbit'
+    QUEUE_PASSWORD = '5lf01xiOFwyMLvQrkzz7'
+    QUEUE_VIRTUAL_HOST = '/xopay'
 
-    CURRENCY_UPDATE_HOURS=(0, 6, 12, 18),
-    CURRENCY_TIMEZONE='Europe/Riga',
+    QUEUE_TRANS_STATUS = 'transactions_status'
+    QUEUE_EMAIL = 'notify_email'
+    QUEUE_SMS = 'notify_sms'
+    QUEUE_REQUEST = 'notify_request'
 
-    AUTH_ALGORITHM='HS512',
-    AUTH_KEY='PzYs2qLh}2$8uUJbBnWB800iYKe5xdYqItRNo7@38yW@tPDVAX}EV5V31*ZK78QS',
-    AUTH_TOKEN_LIFE_TIME=timedelta(minutes=30),
-    AUTH_SYSTEM_USER_ID='xopay.notify',
+    CURRENCY_UPDATE_HOURS = (0, 6, 12, 18)
+    CURRENCY_TIMEZONE = 'Europe/Riga'
 
-    LOG_BASE_NAME='xop',
-    LOG_FORMAT='%(levelname)-6.6s | NOTIFY | %(name)-12.12s | %(asctime)s | %(message)s',
-    LOG_DATE_FORMAT='%d.%m %H:%M:%S'
-)
+    AUTH_ALGORITHM = 'HS512'
+    AUTH_KEY = 'PzYs2qLh}2$8uUJbBnWB800iYKe5xdYqItRNo7@38yW@tPDVAX}EV5V31*ZK78QS'
+    AUTH_TOKEN_LIFE_TIME = timedelta(minutes=30)
+    AUTH_SYSTEM_USER_ID = 'xopay.notify'
 
-_debug = dict(
-    DEBUG=True,
+    LOG_BASE_NAME = 'xop'
+    LOG_FORMAT = '%(levelname)-6.6s | NOTIFY | %(name)-12.12s | %(asctime)s | %(message)s'
+    LOG_DATE_FORMAT = '%d.%m %H:%M:%S'
 
-    LOG_ROOT_LEVEL='DEBUG',
-    LOG_LEVEL='DEBUG',
 
-    CLIENT_BASE_URL='http://127.0.0.1:7254/api/client/dev',
-    ADMIN_BASE_URL='http://127.0.0.1:7128/api/admin/dev',
+class debug(_default):
 
-    MAIL_SERVER="smtp.gmail.com:587",
-    MAIL_USERNAME="daniel.omelchenko@digitaloutlooks.com",
-    MAIL_PASSWORD="Po03yeFGd54c9jHq",
-    MAIL_DEFAULT_SENDER="daniel.omelchenko@digitaloutlooks.com",
+    DEBUG = True
 
-)
+    LOG_ROOT_LEVEL = 'DEBUG'
+    LOG_LEVEL = 'DEBUG'
 
-_production = dict(
-    DEBUG=False,
+    CLIENT_BASE_URL = 'http://127.0.0.1:7254/api/client/dev'
+    ADMIN_BASE_URL = 'http://127.0.0.1:7128/api/admin/dev'
 
-    LOG_ROOT_LEVEL='INFO',
-    LOG_LEVEL='INFO',
+    MAIL_SERVER = "smtp.gmail.com:587"
+    MAIL_USERNAME = "daniel.omelchenko@digitaloutlooks.com"
+    MAIL_PASSWORD = "Po03yeFGd54c9jHq"
+    MAIL_DEFAULT_SENDER = "daniel.omelchenko@digitaloutlooks.com"
 
-    LOG_FILE='/var/log/xopay/xopay.log',
-    LOG_MAX_BYTES=10*1024*1024,
-    LOG_BACKUP_COUNT=10,
 
-    CLIENT_BASE_URL='https://xopay.digitaloutlooks.com/api/client/dev',
-    ADMIN_BASE_URL='https://xopay.digitaloutlooks.com/api/admin/dev',
+class production(_default):
+
+    DEBUG = False
+
+    LOG_ROOT_LEVEL = 'INFO'
+    LOG_LEVEL = 'INFO'
+
+    LOG_FILE = '/var/log/xopay/xopay.log'
+    LOG_MAX_BYTES = 10*1024*1024
+    LOG_BACKUP_COUNT = 10
+
+    CLIENT_BASE_URL = 'https://xopay.digitaloutlooks.com/api/client/dev'
+    ADMIN_BASE_URL = 'https://xopay.digitaloutlooks.com/api/admin/dev'
 
     # TODO: change production settings
-    MAIL_SERVER="smtp.gmail.com:587",
-    MAIL_USERNAME="daniel.omelchenko@digitaloutlooks.com",
-    MAIL_PASSWORD="Po03yeFGd54c9jHq",
-    MAIL_DEFAULT_SENDER="daniel.omelchenko@digitaloutlooks.com",
-
-)
+    MAIL_SERVER = "smtp.gmail.com:587"
+    MAIL_USERNAME = "daniel.omelchenko@digitaloutlooks.com"
+    MAIL_PASSWORD = "Po03yeFGd54c9jHq"
+    MAIL_DEFAULT_SENDER = "daniel.omelchenko@digitaloutlooks.com"
 
 
 def logger_configure(log_config):
@@ -98,33 +97,24 @@ def logger_configure(log_config):
     logging.getLogger(log_config.get('LOG_BASE_NAME', '')).setLevel(log_config['LOG_LEVEL'])
 
 
-class _Config(dict):
-    """
-    Load settings lazily.
-    """
-    def __init__(self, *args, **kwargs):
-        super(_Config, self).__init__(*args, **kwargs)
-        self._load_config_from_args()
+class _ConfigLoader(dict):
+    """ Load config with config_name."""
 
-    def _load_config_from_args(self):
-        parser = argparse.ArgumentParser(description='XOPay Notify Service.', allow_abbrev=False)
-        parser.add_argument('--debug', action='store_true', default=False, help='run in debug mode')
+    def __init__(self):
+        super().__init__()
 
-        args = parser.parse_args()
-        if args.debug:
-            self.load_debug_config()
-        else:
-            self.load_production_config()
+    def load_config(self, config_name='debug'):
+        """
+        :param config_name: one of the class names in current module
+        """
+        xop_config_obj = globals()[config_name]
+        if not xop_config_obj:
+            return
 
-    def _load(self, loaded_config):
-        self.update(loaded_config)
-        logger_configure(self)
+        config_instance = xop_config_obj()
+        for key in dir(config_instance):
+            if key.isupper():
+                self[key] = getattr(config_instance, key)
 
-    def load_debug_config(self):
-        self._load(_debug)
 
-    def load_production_config(self):
-        self._load(_production)
-
-# FIXME: bad solution. Make better!!!
-config = _Config(_default)
+config = _ConfigLoader()

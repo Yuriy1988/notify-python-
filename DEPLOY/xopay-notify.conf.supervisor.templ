@@ -1,5 +1,5 @@
 [program:xopay-notify]
-command=/var/www/xopay/notify/venv/bin/python /var/www/xopay/notify/app.py
+command=/var/www/xopay/notify/venv/bin/python /var/www/xopay/notify/app.py --config=production
 directory=/var/www/xopay/notify
 user={user}
 autostart=true
