@@ -68,6 +68,13 @@ deploy:
 runserver:
 	./app.py --debug
 
+
+# ------- Data generation --------
+
+generate:
+	./generate_notification.py
+
+
 # ========== MacOS ==========
 
 
