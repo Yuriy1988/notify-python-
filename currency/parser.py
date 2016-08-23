@@ -138,27 +138,33 @@ async def _parse_currency_from_privat_bank():
         page_soup = BeautifulSoup(page_html, "html.parser")
         exchanges = (currency.attrs for currency in page_soup.findAll('exchangerate'))
 
-        exchange_UAH = {exch['ccy']: exch for exch in exchanges if exch['base_ccy'] == 'UAH'}
-        if 'RUR' in exchange_UAH:
-            exchange_UAH['RUB'] = exchange_UAH['RUR']
+        exchange_rate = {exch['ccy']: exch for exch in exchanges if exch['base_ccy'] in ['UAH', 'USD'] }
+        if 'RUR' in exchange_rate:
+            exchange_rate['RUB'] = exchange_rate['RUR']
 
         # EUR -> UAH
-        eur_uah_rate = Decimal(exchange_UAH['EUR']['buy'])
+        eur_uah_rate = Decimal(exchange_rate['EUR']['buy'])
 
         # USD -> UAH
-        usd_uah_rate = Decimal(exchange_UAH['USD']['buy'])
+        usd_uah_rate = Decimal(exchange_rate['USD']['buy'])
 
         # RUB -> UAH
-        rub_uah_rate = Decimal(exchange_UAH['RUB']['buy'])
+        rub_uah_rate = Decimal(exchange_rate['RUB']['buy'])
 
         # UAH -> EUR
-        uah_eur_rate = Decimal(1)/Decimal(exchange_UAH['EUR']['sale'])
+        uah_eur_rate = Decimal(1)/Decimal(exchange_rate['EUR']['sale'])
 
         # UAH -> USD
-        uah_usd_rate = Decimal(1)/Decimal(exchange_UAH['USD']['sale'])
+        uah_usd_rate = Decimal(1)/Decimal(exchange_rate['USD']['sale'])
 
         # UAH -> RUB
-        uah_rub_rate = Decimal(1)/Decimal(exchange_UAH['RUB']['sale'])
+        uah_rub_rate = Decimal(1)/Decimal(exchange_rate['RUB']['sale'])
+
+        # USD -> BTC
+        usd_btc_rate = Decimal(1)/Decimal(exchange_rate["BTC"]['sale'])
+
+        # BTC -> USD
+        btc_ust_rate = Decimal(exchange_rate["BTC"]['buy'])
 
     except Exception as err:
         _log.error('Error parsing currency from Privat bank: %r', err)
@@ -171,6 +177,8 @@ async def _parse_currency_from_privat_bank():
         dict(from_currency='UAH', to_currency='EUR', rate=str(uah_eur_rate)),
         dict(from_currency='UAH', to_currency='USD', rate=str(uah_usd_rate)),
         dict(from_currency='UAH', to_currency='RUB', rate=str(uah_rub_rate)),
+        dict(from_currency='USD', to_currency='BTC', rate=str(usd_btc_rate)),
+        dict(from_currency='BTC', to_currency='USD', rate=str(btc_ust_rate)),
     ]
 
 async def parse_currency():
